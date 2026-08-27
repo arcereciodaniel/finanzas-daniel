@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17324d">
-  <title>Finanzas de Daniel · Periodos contables</title>
+  <title>Finanzas de Daniel · Flujo, capital y metas</title>
   <style>
     :root{
       --navy:#17324d;--teal:#2f7477;--bg:#f5f7f9;--card:#fff;--text:#17212b;
@@ -64,8 +64,14 @@
     dialog::backdrop{background:rgba(17,24,39,.45)}
     .dialog-body{padding:20px}.dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
     .danger-zone{border:1px solid #f4b4ae;background:#fff5f4}.reconcile{border-left:4px solid var(--teal)}.reconcile-row{display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap}.delta{font-weight:800}
+
+    .capital-card{border-left:4px solid var(--navy)}.goal-card{border-left:4px solid var(--teal)}
+    .reserve-tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:.75rem;font-weight:800;background:#eef2f6;color:var(--navy)}
+    .reserve-tag.protected{background:#eaf1f8}.reserve-tag.goal{background:#e6f2e8}
+    .mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.mini-grid .field{min-width:0}
     footer{max-width:1440px;margin:0 auto;padding:0 22px 24px;color:var(--muted);font-size:.78rem}
     @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.charts{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:900px){.mini-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:680px){.topbar{align-items:flex-start;flex-wrap:wrap}.header-actions{margin-left:0}.kpis{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}main{padding:14px}.brand{width:100%}}
     @media print{header,.toolbar,.btn,footer{display:none!important}main{max-width:none;padding:0}.view{display:none!important}.view.active{display:block!important}.card{box-shadow:none}}
   </style>
@@ -74,12 +80,13 @@
 <div class="app">
 <header>
   <div class="topbar">
-    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v4</small></div>
+    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v5</small></div>
     <nav id="nav">
       <button data-view="dashboard" class="active">Inicio</button>
       <button data-view="plan">Presupuesto</button>
       <button data-view="movements">Movimientos</button>
       <button data-view="debts">Deudas</button>
+      <button data-view="capital">Capital y metas</button>
       <button data-view="reports">Reportes</button>
     </nav>
     <div class="header-actions">
@@ -93,7 +100,7 @@
 <main>
   <section class="view active" id="view-dashboard">
     <h1>Resumen financiero</h1>
-    <p class="sub">Proyección contra movimientos reales, todo guardado localmente.</p>
+    <p class="sub">Flujo operativo separado del capital protegido y de los fondos reservados.</p>
     <div class="toolbar">
       <div><label>Vista</label>
         <select id="dashboardLevel">
@@ -177,6 +184,32 @@
     </div>
   </section>
 
+  <section class="view" id="view-capital">
+    <h1>Capital y metas</h1>
+    <p class="sub">Dinero que forma parte de tu patrimonio, pero no debe confundirse con el efectivo disponible para el presupuesto diario.</p>
+    <div class="toolbar">
+      <button class="btn" id="addReserveBtn">Agregar fondo</button>
+    </div>
+    <div class="grid kpis" id="capitalKpis"></div>
+    <div class="note" style="margin-top:16px"><strong>Regla:</strong> un aporte a una meta reduce tu saldo operativo disponible, pero no reduce tu patrimonio. Un movimiento de capital protegido tampoco se considera ingreso ordinario.</div>
+    <div class="card table-card" style="margin-bottom:16px">
+      <div class="table-head"><strong>Fondos y capital</strong><span class="pill" id="reserveTotal"></span></div>
+      <div class="table-wrap"><table id="reserveTable"></table></div>
+    </div>
+    <div class="card">
+      <strong>Registrar movimiento de fondo</strong>
+      <form id="reserveTxnForm" class="form-grid" style="margin-top:12px">
+        <div class="field"><label>Fecha</label><input type="date" id="rtDate" required></div>
+        <div class="field"><label>Fondo</label><select id="rtReserve" required></select></div>
+        <div class="field"><label>Tipo</label><select id="rtType"><option>Aporte</option><option>Retiro a operación</option><option>Uso objetivo</option><option>Rendimiento</option><option>Ajuste</option></select></div>
+        <div class="field"><label>Monto</label><input id="rtAmount" type="number" min="0" step="1" required></div>
+        <div class="field wide"><label>Descripción</label><input id="rtDescription" placeholder="Ej. aporte crucero, interés mensual, retiro"></div>
+        <div class="form-actions"><button class="btn" type="submit">Registrar</button></div>
+      </form>
+      <div class="table-wrap" style="margin-top:14px"><table id="reserveTxnTable"></table></div>
+    </div>
+  </section>
+
   <section class="view" id="view-reports">
     <h1>Reportes</h1>
     <p class="sub">Comparación del presupuesto con la ejecución real y el saldo proyectado actualizado después de conciliaciones.</p>
@@ -206,8 +239,29 @@
     </div>
   </section>
 </main>
-<footer>Aplicación local v4 sin conexión · Saldo conciliable y proyección adaptativa · No envía información a ningún servidor.</footer>
+<footer>Aplicación local v5 · Flujo operativo, capital protegido y metas · No envía información a ningún servidor.</footer>
 </div>
+
+<dialog id="reserveDialog">
+  <div class="dialog-body">
+    <h2 id="reserveDialogTitle">Agregar fondo</h2>
+    <form id="reserveForm" class="form-grid">
+      <input type="hidden" id="fId">
+      <div class="field"><label>Nombre</label><input id="fName" required></div>
+      <div class="field"><label>Tipo</label><select id="fType"><option value="protected">Capital protegido</option><option value="goal">Meta / reserva</option></select></div>
+      <div class="field"><label>Meta CRC (opcional)</label><input id="fTarget" type="number" min="0" step="1" value="0"></div>
+      <div class="field"><label>Saldo inicial</label><input id="fOpeningAmount" type="number" min="0" step="1" value="0"></div>
+      <div class="field"><label>Fecha inicial</label><input id="fOpeningDate" type="date" required></div>
+      <div class="field"><label>Ubicación</label><input id="fLocation" placeholder="Ej. MultiMoney, cuenta bancaria"></div>
+      <div class="field"><label>Tasa anual % (opcional)</label><input id="fRate" type="number" min="0" step=".01" value="0"></div>
+      <div class="field wide"><label>Notas</label><textarea id="fNotes"></textarea></div>
+      <div class="dialog-actions wide">
+        <button type="button" class="btn secondary" id="cancelReserveBtn">Cancelar</button>
+        <button type="submit" class="btn">Guardar</button>
+      </div>
+    </form>
+  </div>
+</dialog>
 
 <dialog id="debtDialog">
   <div class="dialog-body">
@@ -237,11 +291,11 @@
 <dialog id="reconcileDialog">
   <div class="dialog-body">
     <h2>Actualizar saldo real</h2>
-    <p class="muted">Usa el saldo que realmente ves en tus cuentas disponibles. Este ajuste no crea un ingreso ni un gasto: simplemente corrige el punto de partida del flujo.</p>
+    <p class="muted">Ingresa únicamente el saldo disponible para operar, excluyendo capital protegido y fondos reservados. Este ajuste no crea un ingreso ni un gasto.</p>
     <form id="reconcileForm" class="form-grid">
       <div class="field"><label>Fecha de conciliación</label><input type="date" id="rDate" required></div>
       <div class="field"><label>Saldo calculado antes del ajuste</label><input id="rCalculated" readonly></div>
-      <div class="field"><label>Saldo real</label><input id="rAmount" type="number" min="0" step="1" required></div>
+      <div class="field"><label>Saldo operativo real</label><input id="rAmount" type="number" min="0" step="1" required></div>
       <div class="field"><label>Diferencia</label><input id="rDifference" readonly></div>
       <div class="field wide"><label>Nota</label><input id="rNote" placeholder="Ej. concilié contra mi cuenta bancaria"></div>
       <div class="dialog-actions wide">
@@ -256,35 +310,23 @@
 "use strict";
 const STORAGE_KEY = "daniel_finanzas_local_v1";
 
-const CATEGORIES = ["Ingreso Daniel","Otros ingresos","Préstamo BN","Tarjetas / acuerdos","Comida","Transporte","Nutricionista","Gimnasio","Pelo","Teléfonos","Ocio","Saldo vencido teléfono","Otros"];
-const EXPENSE_CATEGORIES = CATEGORIES.filter(x=>!["Ingreso Daniel","Otros ingresos"].includes(x));
-const MOVEMENT_TYPES = ["Ingreso","Gasto","Pago deuda"];
-const ACCOUNTS = ["Cuenta bancaria","Efectivo","Otra cuenta"];
+const INCOME_CATEGORIES = ["Ingreso Daniel","Ayuda mamá","Ingreso Filtro","Ingreso freelance","Otros ingresos"];
+const EXPENSE_CATEGORIES = ["Préstamo BN","Tarjetas / acuerdos","Comida","Transporte","Nutricionista","Gimnasio","Pelo","Teléfonos","Ocio","Otros"];
+const CATEGORIES = [...INCOME_CATEGORIES,...EXPENSE_CATEGORIES,"Venta de activo"];
+const MOVEMENT_TYPES = ["Ingreso","Gasto","Pago deuda","Movimiento patrimonial"];
+const ACCOUNTS = ["Cuenta bancaria","Efectivo","MultiMoney","Otra cuenta"];
+const RESERVE_TX_TYPES = ["Aporte","Retiro a operación","Uso objetivo","Rendimiento","Ajuste"];
 
 const initialData = {
   settings:{fx:460},
   quarters:["2026-T3","2026-T4","2027-T1"],
-  periods:[
-    {key:"2026-07-Q2",quarter:"2026-T3",n:1,budgetMonth:"2026-07",fortnight:2,date:"2026-07-16",opening:385000,income:0,otherIncome:260000,budgets:{"Comida":87000,"Transporte":30000,"Saldo vencido teléfono":180300}},
-    {key:"2026-08-Q1",quarter:"2026-T3",n:2,budgetMonth:"2026-08",fortnight:1,date:"2026-07-28",opening:null,income:307250,otherIncome:255000,budgets:{"Préstamo BN":255000,"Tarjetas / acuerdos":230000,"Comida":100000,"Transporte":30000,"Gimnasio":60000,"Pelo":10000}},
-    {key:"2026-08-Q2",quarter:"2026-T3",n:3,budgetMonth:"2026-08",fortnight:2,date:"2026-08-14",opening:null,income:307250,otherIncome:0,budgets:{"Tarjetas / acuerdos":18000,"Comida":100000,"Transporte":30000,"Nutricionista":27000,"Teléfonos":61000}},
-    {key:"2026-09-Q1",quarter:"2026-T3",n:4,budgetMonth:"2026-09",fortnight:1,date:"2026-08-28",opening:null,income:307250,otherIncome:165000,budgets:{"Préstamo BN":255000,"Tarjetas / acuerdos":230000,"Comida":100000,"Transporte":30000,"Gimnasio":60000}},
-    {key:"2026-09-Q2",quarter:"2026-T3",n:5,budgetMonth:"2026-09",fortnight:2,date:"2026-09-14",opening:null,income:307250,otherIncome:0,budgets:{"Tarjetas / acuerdos":18000,"Comida":100000,"Transporte":30000,"Pelo":10000,"Teléfonos":61000}},
-    ...makeQuarter("2026-T4"),
-    ...makeQuarter("2027-T1")
-  ],
+  periods:[...makeQuarter("2026-T3"),...makeQuarter("2026-T4"),...makeQuarter("2027-T1")],
   movements:[],
   reconciliations:[],
+  reserves:[],
+  reserveMovements:[],
   movementSeq:0,
-  debts:[
-    {id:id(),type:"Tarjeta",name:"Tarjeta 5587",usd:1865,crc:3900,fx:460,limit:7300,minimum:38400,payDay:"30",rate:"2,47% mensual USD / 2,98% CRC",priority:4,goal:"Mantener mínimo",notes:"Límite global compartido con 7828 y una tercera tarjeta limpia"},
-    {id:id(),type:"Tarjeta",name:"Tarjeta 7828",usd:2800.11,crc:200000,fx:460,limit:7300,minimum:65840,payDay:"30",rate:"2,47% mensual USD / 2,98% CRC",priority:5,goal:"Mantener mínimo",notes:"Límite global compartido"},
-    {id:id(),type:"Tarjeta",name:"Tarjeta 9955",usd:966,crc:0,fx:460,limit:1000,minimum:18000,payDay:"20",rate:"30% anual USD / 36% CRC",priority:1,goal:"Primera a liquidar",notes:"Utilización crítica"},
-    {id:id(),type:"Tarjeta",name:"Tarjeta 3095",usd:1490,crc:131000,fx:460,limit:2000,minimum:34000,payDay:"6",rate:"Pendiente",priority:2,goal:"Negociar / liquidar",notes:"Mínimo provisional"},
-    {id:id(),type:"Tarjeta",name:"Tarjeta 8517",usd:1640,crc:884000,fx:460,limit:4500,minimum:70520,payDay:"3",rate:"26% anual USD / 34% CRC",priority:3,goal:"Negociar",notes:"Saldo alto en colones"},
-    {id:id(),type:"Préstamo",name:"Préstamo BN",usd:0,crc:0,fx:460,limit:0,minimum:255000,payDay:"4",rate:"N/D",priority:6,goal:"Pagar cuota",notes:"Ingresa el saldo principal cuando lo tengas"},
-    {id:id(),type:"Familiar",name:"Familiar",usd:600,crc:0,fx:460,limit:0,minimum:0,payDay:"Acordar",rate:"0%",priority:7,goal:"Acordar calendario",notes:"Sin interés informado"}
-  ]
+  debts:[]
 };
 
 function makeQuarter(q){
@@ -297,8 +339,8 @@ function makeQuarter(q){
     const budgetMonth=`${year}-${String(month).padStart(2,"0")}`;
     const q1Date=new Date(Date.UTC(year,month-2,28)).toISOString().slice(0,10);
     const q2Date=new Date(Date.UTC(year,month-1,14)).toISOString().slice(0,10);
-    rows.push({key:`${budgetMonth}-Q1`,quarter:q,n:n++,budgetMonth,fortnight:1,date:q1Date,opening:null,income:0,otherIncome:0,budgets:{}});
-    rows.push({key:`${budgetMonth}-Q2`,quarter:q,n:n++,budgetMonth,fortnight:2,date:q2Date,opening:null,income:0,otherIncome:0,budgets:{}});
+    rows.push({key:`${budgetMonth}-Q1`,quarter:q,n:n++,budgetMonth,fortnight:1,date:q1Date,opening:null,income:0,momHelp:0,otherIncome:0,budgets:{}});
+    rows.push({key:`${budgetMonth}-Q2`,quarter:q,n:n++,budgetMonth,fortnight:2,date:q2Date,opening:null,income:0,momHelp:0,otherIncome:0,budgets:{}});
   }
   return rows;
 }
@@ -330,61 +372,93 @@ function canonicalPaymentDate(budgetMonth,fortnight){
 }
 function migrateData(raw){
   raw=raw&&typeof raw==="object"?raw:clone(initialData);
+  const incomingVersion=num(raw.version);
   raw.settings=raw.settings||{fx:460};
   raw.periods=Array.isArray(raw.periods)?raw.periods:[];
   raw.movements=Array.isArray(raw.movements)?raw.movements:[];
   raw.reconciliations=Array.isArray(raw.reconciliations)?raw.reconciliations:[];
   raw.debts=Array.isArray(raw.debts)?raw.debts:[];
+  raw.reserves=Array.isArray(raw.reserves)?raw.reserves:[];
+  raw.reserveMovements=Array.isArray(raw.reserveMovements)?raw.reserveMovements:[];
+
   raw.periods.forEach((p,index)=>{
     const meta=deriveBudgetMeta(p);
     p.budgetMonth=meta.budgetMonth;p.fortnight=meta.fortnight;
     p.key=p.key||`${p.quarter||budgetQuarterFromMonth(meta.budgetMonth)}-${p.n||index+1}`;
     p.quarter=budgetQuarterFromMonth(p.budgetMonth);
     p.date=canonicalPaymentDate(p.budgetMonth,p.fortnight);
-    p.budgets=p.budgets||{};p.income=num(p.income);p.otherIncome=num(p.otherIncome);
+    p.budgets=p.budgets||{};
+    if(num(p.budgets["Saldo vencido teléfono"])){
+      p.budgets["Teléfonos"]=num(p.budgets["Teléfonos"])+num(p.budgets["Saldo vencido teléfono"]);
+      delete p.budgets["Saldo vencido teléfono"];
+    }
+    p.income=num(p.income);p.momHelp=num(p.momHelp);p.otherIncome=num(p.otherIncome);
   });
+
+
+
   const remap=new Map(), merged=[], byAccountingPeriod=new Map();
   [...raw.periods].sort((a,b)=>a.date.localeCompare(b.date)).forEach(p=>{
     const accountingKey=`${p.budgetMonth}|${p.fortnight}`;
     const existing=byAccountingPeriod.get(accountingKey);
-    if(!existing){
-      byAccountingPeriod.set(accountingKey,p);merged.push(p);return;
-    }
+    if(!existing){byAccountingPeriod.set(accountingKey,p);merged.push(p);return;}
     remap.set(periodKey(p),periodKey(existing));
-    existing.income+=num(p.income);existing.otherIncome+=num(p.otherIncome);
+    existing.income+=num(p.income);existing.momHelp+=num(p.momHelp);existing.otherIncome+=num(p.otherIncome);
     if((existing.opening===null||existing.opening===undefined)&&p.opening!==null&&p.opening!==undefined)existing.opening=num(p.opening);
     for(const [category,amount] of Object.entries(p.budgets||{}))existing.budgets[category]=num(existing.budgets[category])+num(amount);
   });
   raw.periods=merged.sort((a,b)=>a.date.localeCompare(b.date));
+
   const debtByName=new Map(raw.debts.map(d=>[d.name,d]));
   let maxSeq=num(raw.movementSeq);
   raw.movements.forEach((m,index)=>{
-    if(!Number.isFinite(Number(m.seq))||Number(m.seq)<=0)m.seq=++maxSeq;
-    else maxSeq=Math.max(maxSeq,Number(m.seq));
+    if(!Number.isFinite(Number(m.seq))||Number(m.seq)<=0)m.seq=++maxSeq; else maxSeq=Math.max(maxSeq,Number(m.seq));
     m.createdAt=m.createdAt||`${m.date||"2000-01-01"}T12:00:00`;
+    if(m.category==="Saldo vencido teléfono")m.category="Teléfonos";
+    const desc=String(m.description||"").toLowerCase();
+    if(m.type==="Ingreso" && /ayuda.*(mami|mamá|mama)|ayuda mensual de mi mamá/.test(desc))m.category="Ayuda mamá";
+    if(m.type==="Ingreso" && /venta de veh[ií]culo/.test(desc)){
+      m.type="Movimiento patrimonial";m.category="Venta de activo";m.affectsOperating=false;
+    }
   });
   raw.movementSeq=maxSeq;
+
+  // Capital del vehículo: se conserva como patrimonio protegido, fuera del flujo operativo.
+  const vehicleSale=raw.movements.find(m=>m.type==="Movimiento patrimonial"&&m.category==="Venta de activo"&&/veh[ií]culo/i.test(m.description||""));
+  if(vehicleSale && !raw.reserves.some(r=>r.sourceMovementId===vehicleSale.id || r.name==="Capital protegido - venta de activo")){
+    raw.reserves.push({id:id(),name:"Capital protegido - venta de activo",type:"protected",target:0,openingAmount:num(vehicleSale.amount),openingDate:vehicleSale.date,location:"Por definir",rate:0,notes:"Capital protegido. No usar para cubrir el presupuesto operativo.",sourceMovementId:vehicleSale.id});
+  }
+
+  // Los respaldos v4 conciliaban el saldo total. Al separar capital, convertir esas conciliaciones a saldo operativo.
+  if(incomingVersion<5){
+    raw.reconciliations.forEach(r=>{
+      const protectedAtDate=raw.reserves.filter(x=>x.type==="protected"&&x.openingDate<=r.date).reduce((sum,x)=>sum+num(x.openingAmount),0);
+      r.legacyTotalAmount=num(r.amount);
+      r.amount=Math.max(0,num(r.amount)-protectedAtDate);
+      if(Number.isFinite(Number(r.calculatedBefore)))r.calculatedBefore=num(r.calculatedBefore)-protectedAtDate;
+      r.scope="operating";
+    });
+  }
   raw.reconciliations.forEach((r,index)=>{
-    r.id=r.id||id();
-    r.date=r.date||new Date().toISOString().slice(0,10);
-    r.amount=num(r.amount);
+    r.id=r.id||id();r.date=r.date||new Date().toISOString().slice(0,10);r.amount=num(r.amount);
     r.afterSeq=Number.isFinite(Number(r.afterSeq))?Number(r.afterSeq):maxSeq;
     r.calculatedBefore=Number.isFinite(Number(r.calculatedBefore))?Number(r.calculatedBefore):null;
-    r.note=r.note||"";
+    r.note=r.note||"";r.scope="operating";
     r.createdAt=r.createdAt||`${r.date}T23:59:${String(index).padStart(2,"0")}`;
   });
+
+  raw.reserveMovements.forEach((t,index)=>{
+    t.id=t.id||id();t.date=t.date||todayIso();t.amount=num(t.amount);t.createdAt=t.createdAt||`${t.date}T20:00:${String(index).padStart(2,"0")}`;
+  });
+
   raw.movements.forEach(m=>{
     if(remap.has(m.period))m.period=remap.get(m.period);
     if(!m.debtId&&m.debt&&debtByName.has(m.debt))m.debtId=debtByName.get(m.debt).id;
-    if(!m.period&&m.date){
-      const p=periodForDateIn(raw.periods,m.date);
-      if(p){m.period=periodKey(p);m.quarter=budgetQuarter(p)}
-    }
-    const linked=raw.periods.find(p=>periodKey(p)===m.period);
-    if(linked)m.quarter=budgetQuarter(linked);
+    if(!m.period&&m.date){const p=periodForDateIn(raw.periods,m.date);if(p){m.period=periodKey(p);m.quarter=budgetQuarter(p)}}
+    const linked=raw.periods.find(p=>periodKey(p)===m.period);if(linked)m.quarter=budgetQuarter(linked);
   });
   raw.quarters=planningQuartersFrom(raw.periods);
-  raw.version=4;
+  raw.version=5;
   return raw;
 }
 function load(){
@@ -393,7 +467,7 @@ function load(){
     return migrateData(saved?JSON.parse(saved):clone(initialData));
   }catch(e){console.error(e);return migrateData(clone(initialData))}
 }
-function save(){data.version=4;localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+function save(){data.version=5;localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
 function money(v){return new Intl.NumberFormat("es-CR",{style:"currency",currency:"CRC",maximumFractionDigits:0}).format(Number(v)||0)}
 function num(v){return Number(v)||0}
 function dateLabel(s){if(!s)return"";return new Intl.DateTimeFormat("es-CR",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(s+"T00:00:00Z"))}
@@ -418,7 +492,7 @@ function allProjectedRows(){
   return periods.map(p=>{
     const opening=p.opening!==null&&p.opening!==undefined?num(p.opening):(prior??0);
     const expenses=EXPENSE_CATEGORIES.reduce((s,c)=>s+num(p.budgets?.[c]),0);
-    const available=opening+num(p.income)+num(p.otherIncome);
+    const available=opening+num(p.income)+num(p.momHelp)+num(p.otherIncome);
     const ending=available-expenses;prior=ending;
     return {...p,planningQuarter:budgetQuarter(p),openingCalc:opening,expenses,available,ending,projectionSource:"Plan original"};
   });
@@ -432,7 +506,34 @@ function periodEndDate(p){
   if(p.fortnight===1)return `${p.budgetMonth}-13`;
   return `${p.budgetMonth}-27`;
 }
-function signedMovement(m){return m.type==="Ingreso"?num(m.amount):-num(m.amount)}
+function signedMovement(m){
+  if(m.type==="Ingreso")return num(m.amount);
+  if(m.type==="Gasto"||m.type==="Pago deuda")return -num(m.amount);
+  return 0;
+}
+function reserveTxnDelta(t){
+  if(t.type==="Aporte"||t.type==="Rendimiento"||t.type==="Ajuste")return num(t.amount);
+  if(t.type==="Retiro a operación"||t.type==="Uso objetivo")return -num(t.amount);
+  return 0;
+}
+function reserveOperatingDelta(t){
+  if(t.type==="Aporte")return -num(t.amount);
+  if(t.type==="Retiro a operación")return num(t.amount);
+  return 0;
+}
+function reserveBalanceAt(r,asOfDate=todayIso()){
+  let balance=r.openingDate<=asOfDate?num(r.openingAmount):0;
+  balance+=(data.reserveMovements||[]).filter(t=>t.reserveId===r.id&&t.date<=asOfDate).reduce((sum,t)=>sum+reserveTxnDelta(t),0);
+  return Math.max(0,balance);
+}
+function reserveTotals(asOfDate=todayIso()){
+  const protectedTotal=data.reserves.filter(r=>r.type==="protected").reduce((s,r)=>s+reserveBalanceAt(r,asOfDate),0);
+  const goalTotal=data.reserves.filter(r=>r.type==="goal").reduce((s,r)=>s+reserveBalanceAt(r,asOfDate),0);
+  return {protectedTotal,goalTotal,total:protectedTotal+goalTotal};
+}
+function eventAfterReconciliation(createdAt,date,rec){
+  return date>rec.date || (date===rec.date && String(createdAt||"")>String(rec.createdAt||""));
+}
 function latestReconciliation(asOfDate=todayIso()){
   return [...(data.reconciliations||[])]
     .filter(r=>r.date<=asOfDate)
@@ -450,16 +551,19 @@ function actualBalanceAt(asOfDate){
   if(!baseRows.length)return 0;
   const rec=latestReconciliation(asOfDate);
   if(rec){
-    const delta=data.movements
+    const movementDelta=data.movements
       .filter(m=>m.date<=asOfDate && (m.date>rec.date || (m.date===rec.date && num(m.seq)>num(rec.afterSeq))))
       .reduce((s,m)=>s+signedMovement(m),0);
-    return num(rec.amount)+delta;
+    const reserveDelta=(data.reserveMovements||[])
+      .filter(t=>t.date<=asOfDate&&eventAfterReconciliation(t.createdAt,t.date,rec))
+      .reduce((s,t)=>s+reserveOperatingDelta(t),0);
+    return num(rec.amount)+movementDelta+reserveDelta;
   }
   const firstDate=baseRows[0].date;
   const base=num(baseRows[0].openingCalc);
-  return base+data.movements
-    .filter(m=>m.date>=firstDate&&m.date<=asOfDate)
-    .reduce((s,m)=>s+signedMovement(m),0);
+  const movementDelta=data.movements.filter(m=>m.date>=firstDate&&m.date<=asOfDate).reduce((s,m)=>s+signedMovement(m),0);
+  const reserveDelta=(data.reserveMovements||[]).filter(t=>t.date>=firstDate&&t.date<=asOfDate).reduce((s,t)=>s+reserveOperatingDelta(t),0);
+  return base+movementDelta+reserveDelta;
 }
 function periodMovements(p,throughDate=null){
   return data.movements.filter(m=>m.period===periodKey(p)&&(!throughDate||m.date<=throughDate));
@@ -468,7 +572,7 @@ function periodHasRealSignal(p){
   return periodMovements(p).length>0 || !!reconciliationForPeriod(p);
 }
 function remainingBudgetForCurrentPeriod(p,throughDate){
-  const ms=periodMovements(p,throughDate).filter(m=>m.type!=="Ingreso");
+  const ms=periodMovements(p,throughDate).filter(m=>m.type==="Gasto"||m.type==="Pago deuda");
   return EXPENSE_CATEGORIES.reduce((sum,category)=>{
     const spent=ms.filter(m=>m.category===category).reduce((s,m)=>s+num(m.amount),0);
     return sum+Math.max(0,num(p.budgets?.[category])-spent);
@@ -479,7 +583,7 @@ function allAdaptiveProjectedRows(){
   return base.map((p,index)=>{
     const end=periodEndDate(p);
     let opening=index===0?num(p.openingCalc):(prior??num(p.openingCalc));
-    let available=opening+num(p.income)+num(p.otherIncome);
+    let available=opening+num(p.income)+num(p.momHelp)+num(p.otherIncome);
     let ending=available-num(p.expenses);
     let source=index===0?"Plan inicial":"Arrastre del plan";
     const isPast=end<today, isCurrent=p.date<=today&&today<=end;
@@ -487,7 +591,7 @@ function allAdaptiveProjectedRows(){
 
     if(isPast && periodHasRealSignal(p)){
       ending=actualBalanceAt(end);
-      available=opening+num(p.income)+num(p.otherIncome);
+      available=opening+num(p.income)+num(p.momHelp)+num(p.otherIncome);
       source=periodRec?"Cierre conciliado":"Resultado real registrado";
     }else if(isCurrent){
       const rec=latestReconciliation(today);
@@ -499,13 +603,13 @@ function allAdaptiveProjectedRows(){
         source="Saldo real conciliado";
       }else if(index>0 && prior!==null){
         opening=prior;
-        available=opening+num(p.income)+num(p.otherIncome);
+        available=opening+num(p.income)+num(p.momHelp)+num(p.otherIncome);
         ending=available-num(p.expenses);
         source=base[index-1]&&periodHasRealSignal(base[index-1])?"Arrastre del resultado anterior":"Arrastre actualizado";
       }
     }else if(index>0){
       opening=prior;
-      available=opening+num(p.income)+num(p.otherIncome);
+      available=opening+num(p.income)+num(p.momHelp)+num(p.otherIncome);
       ending=available-num(p.expenses);
       source="Arrastre actualizado";
     }
@@ -526,7 +630,7 @@ function allActualRows(){
   return rows.map(p=>{
     const ms=periodMovements(p);
     const actualIncome=ms.filter(m=>m.type==="Ingreso").reduce((s,m)=>s+num(m.amount),0);
-    const actualExpenses=ms.filter(m=>m.type!=="Ingreso").reduce((s,m)=>s+num(m.amount),0);
+    const actualExpenses=ms.filter(m=>m.type==="Gasto"||m.type==="Pago deuda").reduce((s,m)=>s+num(m.amount),0);
     const end=periodEndDate(p);
     const actualBalance=p.date<=today?actualBalanceAt(end<today?end:today):null;
     return {...p,actualIncome,actualExpenses,actualBalance};
@@ -574,17 +678,17 @@ function categoryReportFiltered(level,value){
   const rows=selectedRows(level,value), movements=selectedMovements(level,value);
   return EXPENSE_CATEGORIES.map(category=>{
     const budget=rows.reduce((s,p)=>s+num(p.budgets[category]),0);
-    const actual=movements.filter(m=>m.type!=="Ingreso"&&m.category===category).reduce((s,m)=>s+num(m.amount),0);
+    const actual=movements.filter(m=>(m.type==="Gasto"||m.type==="Pago deuda")&&m.category===category).reduce((s,m)=>s+num(m.amount),0);
     return {category,budget,actual,variance:budget-actual,used:budget?actual/budget:0}
   });
 }
 function selectedSummary(level,value){
   const rows=selectedRows(level,value), movements=selectedMovements(level,value);
   const opening=rows[0]?.openingCalc||0;
-  const plannedIncome=rows.reduce((s,r)=>s+num(r.income)+num(r.otherIncome),0);
+  const plannedIncome=rows.reduce((s,r)=>s+num(r.income)+num(r.momHelp)+num(r.otherIncome),0);
   const realIncome=movements.filter(m=>m.type==="Ingreso").reduce((s,m)=>s+num(m.amount),0);
   const plannedExpense=rows.reduce((s,r)=>s+num(r.expenses),0);
-  const realExpense=movements.filter(m=>m.type!=="Ingreso").reduce((s,m)=>s+num(m.amount),0);
+  const realExpense=movements.filter(m=>m.type==="Gasto"||m.type==="Pago deuda").reduce((s,m)=>s+num(m.amount),0);
   const projected=rows.length?(rows.at(-1)?.ending??(opening+plannedIncome-plannedExpense)):opening;
   const actualRows=rows.filter(r=>r.actualBalance!==null&&r.actualBalance!==undefined);
   const actual=actualRows.length?actualRows.at(-1).actualBalance:(opening+realIncome-realExpense);
@@ -631,6 +735,7 @@ function navigate(view){
   if(view==="plan")renderPlan();
   if(view==="movements")renderMovements();
   if(view==="debts")renderDebts();
+  if(view==="capital")renderCapital();
   if(view==="reports")renderReports();
 }
 
@@ -639,14 +744,16 @@ function renderDashboard(){
   const value=document.getElementById("dashboardPeriod").value;
   const summary=selectedSummary(level,value), cat=categoryReportFiltered(level,value), rows=summary.rows;
   const debtTotal=data.debts.reduce((s,d)=>s+debtOutstanding(d),0);
+  const operatingToday=actualBalanceAt(todayIso()), reserves=reserveTotals(todayIso());
+  const liquidPatrimony=operatingToday+reserves.total;
   const cards=[
-    ["Saldo inicial",summary.opening,""],
+    ["Saldo operativo hoy",operatingToday,operatingToday>=0?"good":"bad"],
+    ["Capital protegido",reserves.protectedTotal,""],
+    ["Fondos por objetivo",reserves.goalTotal,""],
+    ["Patrimonio líquido",liquidPatrimony,"good"],
     ["Ingresos presupuestados",summary.plannedIncome,""],
-    ["Ingresos reales",summary.realIncome,summary.realIncome>=summary.plannedIncome?"good":"warn"],
     ["Egresos presupuestados",summary.plannedExpense,""],
-    ["Egresos reales",summary.realExpense,summary.realExpense<=summary.plannedExpense?"good":"bad"],
     ["Saldo proyectado",summary.projected,summary.projected>=0?"good":"bad"],
-    ["Saldo real",summary.actual,summary.actual>=0?"good":"bad"],
     ["Deuda estimada",debtTotal,"warn"]
   ];
   document.getElementById("kpiGrid").innerHTML=cards.map(([l,v,c])=>`<div class="card kpi ${c}"><div class="label">${l}</div><div class="value">${money(v)}</div></div>`).join("");
@@ -656,18 +763,17 @@ function renderDashboard(){
   drawBarChart(document.getElementById("expenseChart"),labels.length?labels:["Sin datos"],labels.length?rows.map(r=>r.expenses):[0],labels.length?rows.map(r=>r.actualExpenses):[0]);
   drawLineChart(document.getElementById("cashChart"),labels.length?labels:["Sin datos"],labels.length?rows.map(r=>r.ending):[0],labels.length?rows.map(r=>r.actualBalance):[0]);
 }
-
 function renderReconciliationStatus(){
   const box=document.getElementById("reconcileStatus");if(!box)return;
   const today=todayIso(), latest=latestReconciliation(today), current=actualBalanceAt(today);
   if(!latest){
-    box.innerHTML=`<div class="reconcile-row"><div><strong>Conciliación de saldo</strong><div class="muted">Todavía no has fijado un saldo real. Cuando el registro se desordene, usa “Actualizar saldo real” y el flujo futuro se recalculará desde ese punto.</div></div><span class="pill">Saldo calculado hoy: ${money(current)}</span></div>`;
+    box.innerHTML=`<div class="reconcile-row"><div><strong>Conciliación de saldo</strong><div class="muted">Todavía no has fijado un saldo real. Cuando el registro se desordene, usa “Actualizar saldo real” y el flujo futuro se recalculará desde ese punto.</div></div><span class="pill">Saldo operativo calculado hoy: ${money(current)}</span></div>`;
     return;
   }
   const diff=latest.calculatedBefore===null?null:num(latest.amount)-num(latest.calculatedBefore);
   const recent=[...(data.reconciliations||[])].sort((a,b)=>String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,3);
   box.innerHTML=`<div class="reconcile-row">
-    <div><strong>Último saldo conciliado: ${money(latest.amount)}</strong><div class="muted">${dateLabel(latest.date)}${latest.note?` · ${latest.note}`:""} · saldo actual después de movimientos posteriores: ${money(current)}</div></div>
+    <div><strong>Último saldo operativo conciliado: ${money(latest.amount)}</strong><div class="muted">${dateLabel(latest.date)}${latest.note?` · ${latest.note}`:""} · saldo actual después de movimientos posteriores: ${money(current)}</div></div>
     ${diff===null?"":`<div class="delta ${diff>=0?"positive":"negative"}">Ajuste ${diff>=0?"+":""}${money(diff)}</div>`}
   </div>
   <div class="table-wrap" style="margin-top:10px"><table style="min-width:650px"><thead><tr><th>Fecha</th><th>Saldo real</th><th>Ajuste</th><th>Nota</th><th></th></tr></thead><tbody>
@@ -698,8 +804,8 @@ function categoryTable(rows){
 function renderPlan(){
   const q=document.getElementById("planQuarter").value||planningQuarters()[0], rows=getOpeningAndBalances(q);
   const staticRows=getStaticQuarterPeriods(q);
-  const cats=["Préstamo BN","Tarjetas / acuerdos","Comida","Transporte","Nutricionista","Gimnasio","Pelo","Teléfonos","Ocio","Saldo vencido teléfono","Otros"];
-  const head=["Mes presupuestario","Quincena","Fecha real de ingreso","Saldo base actualizado","Base usada","Ingreso Daniel","Otros ingresos","Disponible / base",...cats,"Total egresos","Saldo final actualizado"];
+  const cats=["Préstamo BN","Tarjetas / acuerdos","Comida","Transporte","Nutricionista","Gimnasio","Pelo","Teléfonos","Ocio","Otros"];
+  const head=["Mes presupuestario","Quincena","Fecha real de ingreso","Saldo base actualizado","Base usada","Ingreso Daniel","Ayuda mamá","Otros ingresos","Disponible operativo",...cats,"Total egresos","Saldo final actualizado"];
   let previousMonth="";
   document.getElementById("planTable").innerHTML=`<thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${
     rows.map((r,i)=>{
@@ -711,6 +817,7 @@ function renderPlan(){
       <td class="num">${i===0?`<input class="editable" type="number" data-plan="${periodKey(r)}|opening" value="${r.openingCalc}">`:money(r.openingCalc)}</td>
       <td><span class="pill">${r.projectionSource}</span></td>
       <td><input class="editable" type="number" data-plan="${periodKey(r)}|income" value="${r.income}"></td>
+      <td><input class="editable" type="number" data-plan="${periodKey(r)}|momHelp" value="${num(r.momHelp)}"></td>
       <td><input class="editable" type="number" data-plan="${periodKey(r)}|otherIncome" value="${r.otherIncome}"></td>
       <td class="num">${money(r.available)}</td>
       ${cats.map(c=>`<td><input class="editable" type="number" data-budget="${periodKey(r)}|${c}" value="${num(r.budgets[c])}"></td>`).join("")}
@@ -726,8 +833,8 @@ function renderMovements(){
   const type=document.getElementById("movementTypeFilter").value;
   const rows=selectedMovements(level,value).filter(m=>!type||m.type===type).sort((a,b)=>b.date.localeCompare(a.date));
   document.getElementById("movementCount").textContent=`${rows.length} movimientos · ${selectedLabel(level,value)}`;
-  document.getElementById("movementTable").innerHTML=`<thead><tr><th>Fecha</th><th>Mes presupuestario</th><th>Quincena</th><th>Tipo</th><th>Categoría</th><th>Deuda</th><th>Descripción</th><th>Monto</th><th></th></tr></thead><tbody>${
-    rows.length?rows.map(m=>{const p=movementPeriod(m);return `<tr><td>${dateLabel(m.date)}</td><td>${p?monthLabel(p.budgetMonth):""}</td><td class="center">${p?(p.fortnight===1?"1.ª":"2.ª"):""}</td><td><span class="pill">${m.type}</span></td><td>${m.category}</td><td>${movementDebtName(m)}</td><td>${m.description||""}</td><td class="num">${money(m.amount)}</td><td><button class="btn danger small" data-delete-movement="${m.id}">Eliminar</button></td></tr>`}).join(""):`<tr><td colspan="9" class="empty">Aún no hay movimientos en este periodo.</td></tr>`
+  document.getElementById("movementTable").innerHTML=`<thead><tr><th>Fecha</th><th>Mes presupuestario</th><th>Quincena</th><th>Tipo</th><th>Categoría</th><th>Deuda</th><th>Cuenta</th><th>Descripción</th><th>Monto</th><th></th></tr></thead><tbody>${
+    rows.length?rows.map(m=>{const p=movementPeriod(m);return `<tr><td>${dateLabel(m.date)}</td><td>${p?monthLabel(p.budgetMonth):""}</td><td class="center">${p?(p.fortnight===1?"1.ª":"2.ª"):""}</td><td><span class="pill">${m.type}</span></td><td>${m.category}</td><td>${movementDebtName(m)}</td><td>${m.account||""}</td><td>${m.description||""}</td><td class="num">${money(m.amount)}</td><td><button class="btn danger small" data-delete-movement="${m.id}">Eliminar</button></td></tr>`}).join(""):`<tr><td colspan="10" class="empty">Aún no hay movimientos en este periodo.</td></tr>`
   }</tbody>`;
 }
 function renderDebts(){
@@ -744,13 +851,46 @@ function renderDebts(){
   }</tbody>`;
 }
 
+function reserveLabel(r){return r.type==="protected"?"Capital protegido":"Meta / reserva"}
+function openReserve(r=null){
+  document.getElementById("reserveDialogTitle").textContent=r?"Editar fondo":"Agregar fondo";
+  document.getElementById("fId").value=r?.id||"";
+  document.getElementById("fName").value=r?.name||"";
+  document.getElementById("fType").value=r?.type||"goal";
+  document.getElementById("fTarget").value=num(r?.target);
+  document.getElementById("fOpeningAmount").value=num(r?.openingAmount);
+  document.getElementById("fOpeningDate").value=r?.openingDate||todayIso();
+  document.getElementById("fLocation").value=r?.location||"";
+  document.getElementById("fRate").value=num(r?.rate);
+  document.getElementById("fNotes").value=r?.notes||"";
+  document.getElementById("reserveDialog").showModal();
+}
+function refreshReserveSelect(selected=""){
+  const el=document.getElementById("rtReserve");if(!el)return;
+  fillObjectSelect(el,data.reserves.map(r=>({value:r.id,label:r.name})),selected||el.value);
+}
+function renderCapital(){
+  const today=todayIso(), totals=reserveTotals(today), operating=actualBalanceAt(today), debtTotal=data.debts.reduce((s,d)=>s+debtOutstanding(d),0);
+  const liquid=operating+totals.total, net=liquid-debtTotal;
+  const cards=[["Saldo operativo",operating,operating>=0?"good":"bad"],["Capital protegido",totals.protectedTotal,""],["Metas reservadas",totals.goalTotal,""],["Patrimonio líquido",liquid,"good"],["Deuda estimada",debtTotal,"warn"],["Posición líquida neta",net,net>=0?"good":"bad"]];
+  document.getElementById("capitalKpis").innerHTML=cards.map(([l,v,c])=>`<div class="card kpi ${c}"><div class="label">${l}</div><div class="value">${money(v)}</div></div>`).join("");
+  document.getElementById("reserveTotal").textContent=`Total reservado: ${money(totals.total)}`;
+  document.getElementById("reserveTable").innerHTML=`<thead><tr><th>Fondo</th><th>Tipo</th><th>Ubicación</th><th>Saldo</th><th>Meta</th><th>Avance</th><th>Tasa</th><th>Notas</th><th></th></tr></thead><tbody>${data.reserves.length?data.reserves.map(r=>{
+    const bal=reserveBalanceAt(r,today),target=num(r.target),progress=target?bal/target:0;
+    return `<tr><td><strong>${r.name}</strong></td><td><span class="reserve-tag ${r.type}">${reserveLabel(r)}</span></td><td>${r.location||"—"}</td><td class="num">${money(bal)}</td><td class="num">${target?money(target):"—"}</td><td>${target?`<div class="progress"><span style="width:${Math.min(100,progress*100)}%"></span></div><small>${(progress*100).toFixed(0)}%</small>`:"—"}</td><td class="center">${num(r.rate)?`${num(r.rate).toFixed(2)}%`:"—"}</td><td>${r.notes||""}</td><td><button class="btn secondary small" data-edit-reserve="${r.id}">Editar</button></td></tr>`;
+  }).join(""):`<tr><td colspan="9" class="empty">No hay fondos configurados.</td></tr>`}</tbody>`;
+  const tx=[...(data.reserveMovements||[])].sort((a,b)=>String(b.date).localeCompare(String(a.date))||String(b.createdAt).localeCompare(String(a.createdAt))).slice(0,25);
+  document.getElementById("reserveTxnTable").innerHTML=`<thead><tr><th>Fecha</th><th>Fondo</th><th>Tipo</th><th>Descripción</th><th>Monto</th><th></th></tr></thead><tbody>${tx.length?tx.map(t=>`<tr><td>${dateLabel(t.date)}</td><td>${data.reserves.find(r=>r.id===t.reserveId)?.name||""}</td><td><span class="pill">${t.type}</span></td><td>${t.description||""}</td><td class="num">${money(t.amount)}</td><td><button class="btn danger small" data-delete-reserve-txn="${t.id}">Eliminar</button></td></tr>`).join(""):`<tr><td colspan="6" class="empty">Sin movimientos de fondos todavía.</td></tr>`}</tbody>`;
+  refreshReserveSelect();
+}
+
 function renderReports(){
   const level=document.getElementById("reportLevel").value;
   const value=document.getElementById("reportPeriod").value;
   const rows=selectedRows(level,value), cats=categoryReportFiltered(level,value);
   document.getElementById("reportPeriodTitle").textContent=`Detalle: ${selectedLabel(level,value)}`;
   document.getElementById("periodReportTable").innerHTML=`<thead><tr><th>Periodo</th><th>Fecha</th><th>Ingresos plan</th><th>Ingresos reales</th><th>Egresos plan</th><th>Egresos reales</th><th>Variación</th><th>Saldo proyectado</th><th>Saldo real</th></tr></thead><tbody>${
-    rows.length?rows.map(r=>`<tr><td class="center">${monthLabel(r.budgetMonth)} · ${r.fortnight===1?"1.ª":"2.ª"}</td><td>${dateLabel(r.date)}</td><td class="num">${money(r.income+r.otherIncome)}</td><td class="num">${money(r.actualIncome)}</td><td class="num">${money(r.expenses)}</td><td class="num">${money(r.actualExpenses)}</td><td class="num ${r.expenses-r.actualExpenses<0?"negative":"positive"}">${money(r.expenses-r.actualExpenses)}</td><td class="num">${money(r.ending)}</td><td class="num">${r.actualBalance===null?"—":money(r.actualBalance)}</td></tr>`).join(""):`<tr><td colspan="9" class="empty">No hay periodos configurados para esta selección.</td></tr>`
+    rows.length?rows.map(r=>`<tr><td class="center">${monthLabel(r.budgetMonth)} · ${r.fortnight===1?"1.ª":"2.ª"}</td><td>${dateLabel(r.date)}</td><td class="num">${money(num(r.income)+num(r.momHelp)+num(r.otherIncome))}</td><td class="num">${money(r.actualIncome)}</td><td class="num">${money(r.expenses)}</td><td class="num">${money(r.actualExpenses)}</td><td class="num ${r.expenses-r.actualExpenses<0?"negative":"positive"}">${money(r.expenses-r.actualExpenses)}</td><td class="num">${money(r.ending)}</td><td class="num">${r.actualBalance===null?"—":money(r.actualBalance)}</td></tr>`).join(""):`<tr><td colspan="9" class="empty">No hay periodos configurados para esta selección.</td></tr>`
   }</tbody>`;
   document.getElementById("categoryReportTable").innerHTML=categoryTable(cats);
 }
@@ -804,6 +944,8 @@ function bind(){
   document.getElementById("movementTypeFilter").options[0].text="Todos";
   document.getElementById("mDate").value=new Date().toISOString().slice(0,10);
   refreshDebtSelect();
+  refreshReserveSelect();
+  document.getElementById("rtDate").value=todayIso();
 
   document.getElementById("planQuarter").addEventListener("change",renderPlan);
   ["dashboard","movement","report"].forEach(prefix=>{
@@ -853,12 +995,14 @@ function bind(){
     if(type==="Pago deuda"&&!debtObj)return alert("Selecciona la deuda o acreedor.");
     const seq=++data.movementSeq;
     data.movements.push({id:id(),seq,createdAt:new Date().toISOString(),date,type,category:document.getElementById("mCategory").value,debtId:debtObj?.id||"",debt:debtObj?.name||"",account:document.getElementById("mAccount").value,description:document.getElementById("mDescription").value.trim(),amount:num(document.getElementById("mAmount").value),period:periodKey(p),quarter:budgetQuarter(p)});
-    save();e.target.reset();document.getElementById("mDate").value=new Date().toISOString().slice(0,10);fillSelect(document.getElementById("mType"),MOVEMENT_TYPES);fillSelect(document.getElementById("mCategory"),CATEGORIES);fillSelect(document.getElementById("mAccount"),ACCOUNTS);refreshDebtSelect();renderMovements();
+    save();e.target.reset();document.getElementById("mDate").value=new Date().toISOString().slice(0,10);fillSelect(document.getElementById("mType"),MOVEMENT_TYPES);fillSelect(document.getElementById("mCategory"),CATEGORIES);fillSelect(document.getElementById("mAccount"),ACCOUNTS);refreshDebtSelect();renderMovements();renderDashboard();renderPlan();
   });
 
   document.addEventListener("click",e=>{
     const del=e.target.closest("[data-delete-movement]");if(del&&confirm("¿Eliminar este movimiento?")){data.movements=data.movements.filter(m=>m.id!==del.dataset.deleteMovement);save();renderMovements()}
     const edit=e.target.closest("[data-edit-debt]");if(edit)openDebt(data.debts.find(d=>d.id===edit.dataset.editDebt));
+    const editReserve=e.target.closest("[data-edit-reserve]");if(editReserve)openReserve(data.reserves.find(r=>r.id===editReserve.dataset.editReserve));
+    const delReserveTxn=e.target.closest("[data-delete-reserve-txn]");if(delReserveTxn&&confirm("¿Eliminar este movimiento de fondo?")){data.reserveMovements=data.reserveMovements.filter(t=>t.id!==delReserveTxn.dataset.deleteReserveTxn);save();renderCapital();renderDashboard();renderPlan()}
     const delRec=e.target.closest("[data-delete-reconcile]");
     if(delRec&&confirm("¿Eliminar esta conciliación de saldo?")){data.reconciliations=data.reconciliations.filter(r=>r.id!==delRec.dataset.deleteReconcile);save();renderDashboard();renderPlan()}
     const pay=e.target.closest("[data-pay-debt]");
@@ -882,6 +1026,19 @@ function bind(){
     }
   });
 
+  document.getElementById("addReserveBtn").addEventListener("click",()=>openReserve());
+  document.getElementById("cancelReserveBtn").addEventListener("click",()=>document.getElementById("reserveDialog").close());
+  document.getElementById("reserveForm").addEventListener("submit",e=>{
+    e.preventDefault();const rid=document.getElementById("fId").value;
+    const obj={id:rid||id(),name:document.getElementById("fName").value.trim(),type:document.getElementById("fType").value,target:num(document.getElementById("fTarget").value),openingAmount:num(document.getElementById("fOpeningAmount").value),openingDate:document.getElementById("fOpeningDate").value,location:document.getElementById("fLocation").value.trim(),rate:num(document.getElementById("fRate").value),notes:document.getElementById("fNotes").value.trim()};
+    const i=data.reserves.findIndex(r=>r.id===rid);i>=0?data.reserves[i]={...data.reserves[i],...obj}:data.reserves.push(obj);
+    save();document.getElementById("reserveDialog").close();refreshReserveSelect();renderCapital();renderDashboard();renderPlan();
+  });
+  document.getElementById("reserveTxnForm").addEventListener("submit",e=>{
+    e.preventDefault();const reserveId=document.getElementById("rtReserve").value;if(!reserveId)return alert("Selecciona un fondo.");
+    data.reserveMovements.push({id:id(),date:document.getElementById("rtDate").value,reserveId,type:document.getElementById("rtType").value,amount:num(document.getElementById("rtAmount").value),description:document.getElementById("rtDescription").value.trim(),createdAt:new Date().toISOString()});
+    save();e.target.reset();document.getElementById("rtDate").value=todayIso();refreshReserveSelect(reserveId);renderCapital();renderDashboard();renderPlan();
+  });
   document.getElementById("addDebtBtn").addEventListener("click",()=>openDebt());
   document.getElementById("cancelDebtBtn").addEventListener("click",()=>document.getElementById("debtDialog").close());
   document.getElementById("debtForm").addEventListener("submit",e=>{
@@ -903,16 +1060,16 @@ function bind(){
     const source=document.getElementById("planQuarter").value,q=prompt("Nombre del nuevo trimestre, por ejemplo 2027-T2");
     if(!q||planningQuarters().includes(q))return;
     const src=getQuarterPeriods(source),rows=makeQuarter(q);if(!rows.length)return alert("Formato inválido.");
-    rows.forEach((p,i)=>{const s=src[i];if(s){p.income=s.income;p.otherIncome=s.otherIncome;p.budgets=clone(s.budgets)}});
+    rows.forEach((p,i)=>{const s=src[i];if(s){p.income=s.income;p.momHelp=s.momHelp;p.otherIncome=s.otherIncome;p.budgets=clone(s.budgets)}});
     data.periods.push(...rows);save();syncQuarterSelectors();document.getElementById("planQuarter").value=q;renderPlan()
   });
 
   document.getElementById("exportBtn").addEventListener("click",()=>download(`respaldo-finanzas-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(data,null,2),"application/json"));
   document.getElementById("importBtn").addEventListener("click",()=>document.getElementById("importFile").click());
   document.getElementById("importFile").addEventListener("change",async e=>{
-    try{const imported=JSON.parse(await e.target.files[0].text());if(!imported.periods||!imported.movements||!imported.debts)throw Error();data=migrateData(imported);save();syncQuarterSelectors();refreshDebtSelect();navigate("dashboard");alert("Respaldo restaurado y actualizado a la versión 4.")}catch{alert("El archivo no es un respaldo válido.")}e.target.value=""
+    try{const imported=JSON.parse(await e.target.files[0].text());if(!imported.periods||!imported.movements||!imported.debts)throw Error();data=migrateData(imported);save();syncQuarterSelectors();refreshDebtSelect();refreshReserveSelect();navigate("dashboard");alert("Respaldo restaurado y actualizado a la versión 5.")}catch{alert("El archivo no es un respaldo válido.")}e.target.value=""
   });
-  document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Esto eliminará todos los cambios locales. ¿Continuar?")){data=migrateData(clone(initialData));save();syncQuarterSelectors();refreshDebtSelect();navigate("dashboard")}});
+  document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Esto eliminará todos los cambios locales. ¿Continuar?")){data=migrateData(clone(initialData));save();syncQuarterSelectors();refreshDebtSelect();refreshReserveSelect();navigate("dashboard")}});
 
   document.getElementById("exportMovementsCsv").addEventListener("click",()=>{
     const level=document.getElementById("movementLevel").value,value=document.getElementById("movementPeriod").value;
