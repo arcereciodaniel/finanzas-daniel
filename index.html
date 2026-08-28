@@ -74,7 +74,10 @@
     @media(max-width:900px){.mini-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:680px){.topbar{align-items:flex-start;flex-wrap:wrap}.header-actions{margin-left:0}.kpis{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}main{padding:14px}.brand{width:100%}}
     @media print{header,.toolbar,.btn,footer{display:none!important}main{max-width:none;padding:0}.view{display:none!important}.view.active{display:block!important}.card{box-shadow:none}}
-  </style>
+  
+.archived-row{opacity:.72;background:rgba(102,112,133,.05)}
+.archived-row strong{text-decoration:none}
+</style>
 </head>
 <body>
 <div class="app">
@@ -177,7 +180,10 @@
     <h1>Control de deudas</h1>
     <p class="sub">Tarjetas, préstamo y deuda familiar. Los pagos registrados reducen el saldo estimado.</p>
     <div class="note"><strong>Pagado registrado</strong> suma únicamente los movimientos creados con tipo <em>Pago deuda</em> y vinculados a esa deuda. Usa el botón “Registrar pago” de cada fila para que el vínculo quede correcto. El saldo restante es una estimación: actualiza el saldo base cuando entren intereses o cargos nuevos.</div>
-    <div class="toolbar"><button class="btn" id="addDebtBtn">Agregar deuda</button></div>
+    <div class="toolbar">
+      <button class="btn" id="addDebtBtn">Agregar deuda</button>
+      <div><label>Mostrar</label><select id="debtStatusFilter"><option value="active">Deudas activas</option><option value="archived">Archivadas / pagadas</option><option value="all">Todas</option></select></div>
+    </div>
     <div class="card table-card">
       <div class="table-head"><strong>Inventario</strong><span class="pill" id="debtTotal"></span></div>
       <div class="table-wrap"><table id="debtTable"></table></div>
@@ -239,7 +245,7 @@
     </div>
   </section>
 </main>
-<footer>Aplicación local v5 · Flujo operativo, capital protegido y metas · No envía información a ningún servidor.</footer>
+<footer>Aplicación local v5.1 · Flujo operativo, capital protegido, metas y archivo de deudas · No envía información a ningún servidor.</footer>
 </div>
 
 <dialog id="reserveDialog">
@@ -270,6 +276,7 @@
       <input type="hidden" id="dId">
       <div class="field"><label>Tipo</label><select id="dType"><option>Tarjeta</option><option>Préstamo</option><option>Familiar</option><option>Otra</option></select></div>
       <div class="field"><label>Nombre / ID</label><input id="dName" required></div>
+      <div class="field"><label>Estado</label><select id="dStatus"><option value="active">Activa</option><option value="archived">Pagada / archivada</option></select></div>
       <div class="field"><label>Saldo USD</label><input id="dUsd" type="number" min="0" step=".01" value="0"></div>
       <div class="field"><label>Saldo CRC</label><input id="dCrc" type="number" min="0" step="1" value="0"></div>
       <div class="field"><label>Tipo de cambio</label><input id="dFx" type="number" min="1" step="1" value="460"></div>
@@ -381,6 +388,15 @@ function migrateData(raw){
   raw.reserves=Array.isArray(raw.reserves)?raw.reserves:[];
   raw.reserveMovements=Array.isArray(raw.reserveMovements)?raw.reserveMovements:[];
 
+  // Ciclo de vida de deudas (v5.1): una deuda archivada conserva su historial,
+  // pero deja de sumar en deuda activa y deja de aparecer para nuevos pagos.
+  raw.debts.forEach(d=>{
+    d.status=(d.status==="archived"||d.archived===true)?"archived":"active";
+    d.closedAt=d.status==="archived"?(d.closedAt||""):"";
+    d.closedReason=d.status==="archived"?(d.closedReason||"Pagada / finalizada"):"";
+    delete d.archived;
+  });
+
   raw.periods.forEach((p,index)=>{
     const meta=deriveBudgetMeta(p);
     p.budgetMonth=meta.budgetMonth;p.fortnight=meta.fortnight;
@@ -458,7 +474,7 @@ function migrateData(raw){
     const linked=raw.periods.find(p=>periodKey(p)===m.period);if(linked)m.quarter=budgetQuarter(linked);
   });
   raw.quarters=planningQuartersFrom(raw.periods);
-  raw.version=5;
+  raw.version=5.1;
   return raw;
 }
 function load(){
@@ -467,7 +483,7 @@ function load(){
     return migrateData(saved?JSON.parse(saved):clone(initialData));
   }catch(e){console.error(e);return migrateData(clone(initialData))}
 }
-function save(){data.version=5;localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+function save(){data.version=5.1;localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
 function money(v){return new Intl.NumberFormat("es-CR",{style:"currency",currency:"CRC",maximumFractionDigits:0}).format(Number(v)||0)}
 function num(v){return Number(v)||0}
 function dateLabel(s){if(!s)return"";return new Intl.DateTimeFormat("es-CR",{day:"2-digit",month:"short",year:"numeric",timeZone:"UTC"}).format(new Date(s+"T00:00:00Z"))}
@@ -700,6 +716,10 @@ function debtPayments(d){
 function debtEquivalent(d){return num(d.usd)*num(d.fx)+num(d.crc)}
 function debtOutstanding(d){return Math.max(0,debtEquivalent(d)-debtPayments(d))}
 function debtUtil(d){return num(d.limit)?(num(d.usd)+num(d.crc)/num(d.fx))/num(d.limit):0}
+function debtStatus(d){return d?.status==="archived"?"archived":"active"}
+function activeDebts(){return data.debts.filter(d=>debtStatus(d)==="active")}
+function activeDebtTotal(){return activeDebts().reduce((s,d)=>s+debtOutstanding(d),0)}
+function activeDebtMinimumTotal(){return activeDebts().reduce((s,d)=>s+num(d.minimum),0)}
 
 function fillSelect(el,values,current){
   el.innerHTML=values.map(v=>`<option value="${v}" ${v===current?"selected":""}>${v}</option>`).join("")
@@ -743,7 +763,7 @@ function renderDashboard(){
   const level=document.getElementById("dashboardLevel").value;
   const value=document.getElementById("dashboardPeriod").value;
   const summary=selectedSummary(level,value), cat=categoryReportFiltered(level,value), rows=summary.rows;
-  const debtTotal=data.debts.reduce((s,d)=>s+debtOutstanding(d),0);
+  const debtTotal=activeDebtTotal();
   const operatingToday=actualBalanceAt(todayIso()), reserves=reserveTotals(todayIso());
   const liquidPatrimony=operatingToday+reserves.total;
   const cards=[
@@ -838,16 +858,29 @@ function renderMovements(){
   }</tbody>`;
 }
 function renderDebts(){
-  const total=data.debts.reduce((s,d)=>s+debtOutstanding(d),0);
-  document.getElementById("debtTotal").textContent=`Total restante estimado: ${money(total)}`;
-  document.getElementById("debtTable").innerHTML=`<thead><tr><th>Prioridad</th><th>Deuda</th><th>Tipo</th><th>Saldo base equiv.</th><th title="Suma de movimientos tipo Pago deuda vinculados a esta deuda">Pagado registrado</th><th>Saldo restante estimado</th><th>Utilización</th><th>Pago mínimo</th><th>Día pago</th><th>Meta</th><th>Acciones</th></tr></thead><tbody>${
-    [...data.debts].sort((a,b)=>a.priority-b.priority).map(d=>`<tr>
-      <td class="center">${d.priority}</td><td><strong>${d.name}</strong><br><small class="muted">${d.notes||""}</small></td><td>${d.type}</td>
+  const filter=document.getElementById("debtStatusFilter")?.value||"active";
+  const active=activeDebts(), archived=data.debts.filter(d=>debtStatus(d)==="archived");
+  const rows=data.debts.filter(d=>filter==="all"||debtStatus(d)===filter).sort((a,b)=>{
+    if(debtStatus(a)!==debtStatus(b))return debtStatus(a)==="active"?-1:1;
+    return num(a.priority)-num(b.priority);
+  });
+  const total=activeDebtTotal(), minimum=activeDebtMinimumTotal();
+  document.getElementById("debtTotal").textContent=`Activas: ${active.length} · saldo estimado ${money(total)} · mínimos ${money(minimum)} · archivadas ${archived.length}`;
+  document.getElementById("debtTable").innerHTML=`<thead><tr><th>Estado</th><th>Prioridad</th><th>Deuda</th><th>Tipo</th><th>Saldo base equiv.</th><th title="Suma de movimientos tipo Pago deuda vinculados a esta deuda">Pagado registrado</th><th>Saldo restante estimado</th><th>Utilización</th><th>Pago mínimo</th><th>Día pago</th><th>Meta / cierre</th><th>Acciones</th></tr></thead><tbody>${
+    rows.length?rows.map(d=>{
+      const archivedDebt=debtStatus(d)==="archived";
+      const status=archivedDebt?`<span class="pill">Pagada / archivada</span>`:`<span class="pill">Activa</span>`;
+      const closure=archivedDebt?`${d.closedAt?dateLabel(d.closedAt):"Fecha no indicada"}${d.closedReason?` · ${d.closedReason}`:""}`:(d.goal||"");
+      const actions=archivedDebt
+        ? `<button class="btn secondary small" data-reactivate-debt="${d.id}">Reactivar</button><button class="btn secondary small" data-edit-debt="${d.id}">Editar</button>`
+        : `<button class="btn small" data-pay-debt="${d.id}">Registrar pago</button><button class="btn secondary small" data-edit-debt="${d.id}">Editar</button><button class="btn secondary small" data-archive-debt="${d.id}">Cerrar / archivar</button>`;
+      return `<tr class="${archivedDebt?"archived-row":""}">
+      <td>${status}</td><td class="center">${d.priority}</td><td><strong>${d.name}</strong><br><small class="muted">${d.notes||""}</small></td><td>${d.type}</td>
       <td class="num">${money(debtEquivalent(d))}</td><td class="num">${money(debtPayments(d))}</td><td class="num">${money(debtOutstanding(d))}</td>
       <td>${d.limit?`<div class="progress"><span style="width:${Math.min(100,debtUtil(d)*100)}%"></span></div><small>${(debtUtil(d)*100).toFixed(1)}%</small>`:"—"}</td>
-      <td class="num">${money(d.minimum)}</td><td class="center">${d.payDay||""}</td><td>${d.goal||""}</td>
-      <td><div class="actions"><button class="btn small" data-pay-debt="${d.id}">Registrar pago</button><button class="btn secondary small" data-edit-debt="${d.id}">Editar</button></div></td>
-    </tr>`).join("")
+      <td class="num">${money(d.minimum)}</td><td class="center">${d.payDay||""}</td><td>${closure||""}</td>
+      <td><div class="actions">${actions}</div></td>
+    </tr>`}).join(""):`<tr><td colspan="12" class="empty">No hay deudas en esta vista.</td></tr>`
   }</tbody>`;
 }
 
@@ -870,7 +903,7 @@ function refreshReserveSelect(selected=""){
   fillObjectSelect(el,data.reserves.map(r=>({value:r.id,label:r.name})),selected||el.value);
 }
 function renderCapital(){
-  const today=todayIso(), totals=reserveTotals(today), operating=actualBalanceAt(today), debtTotal=data.debts.reduce((s,d)=>s+debtOutstanding(d),0);
+  const today=todayIso(), totals=reserveTotals(today), operating=actualBalanceAt(today), debtTotal=activeDebtTotal();
   const liquid=operating+totals.total, net=liquid-debtTotal;
   const cards=[["Saldo operativo",operating,operating>=0?"good":"bad"],["Capital protegido",totals.protectedTotal,""],["Metas reservadas",totals.goalTotal,""],["Patrimonio líquido",liquid,"good"],["Deuda estimada",debtTotal,"warn"],["Posición líquida neta",net,net>=0?"good":"bad"]];
   document.getElementById("capitalKpis").innerHTML=cards.map(([l,v,c])=>`<div class="card kpi ${c}"><div class="label">${l}</div><div class="value">${money(v)}</div></div>`).join("");
@@ -926,10 +959,10 @@ function drawLineChart(canvas,labels,a,b){
 function openDebt(d=null){
   const dialog=document.getElementById("debtDialog");
   document.getElementById("debtDialogTitle").textContent=d?"Editar deuda":"Agregar deuda";
-  ["Id","Type","Name","Usd","Crc","Fx","Limit","Minimum","PayDay","Rate","Priority","Goal","Notes"].forEach(k=>{
+  ["Id","Type","Name","Status","Usd","Crc","Fx","Limit","Minimum","PayDay","Rate","Priority","Goal","Notes"].forEach(k=>{
     const el=document.getElementById("d"+k);if(!el)return;
-    const map={Id:"id",Type:"type",Name:"name",Usd:"usd",Crc:"crc",Fx:"fx",Limit:"limit",Minimum:"minimum",PayDay:"payDay",Rate:"rate",Priority:"priority",Goal:"goal",Notes:"notes"};
-    el.value=d?.[map[k]]??({Fx:460,Usd:0,Crc:0,Limit:0,Minimum:0,Priority:data.debts.length+1}[k]??"")
+    const map={Id:"id",Type:"type",Name:"name",Status:"status",Usd:"usd",Crc:"crc",Fx:"fx",Limit:"limit",Minimum:"minimum",PayDay:"payDay",Rate:"rate",Priority:"priority",Goal:"goal",Notes:"notes"};
+    el.value=d?.[map[k]]??({Status:"active",Fx:460,Usd:0,Crc:0,Limit:0,Minimum:0,Priority:activeDebts().length+1}[k]??"")
   });
   dialog.showModal();
 }
@@ -942,6 +975,7 @@ function bind(){
   fillSelect(document.getElementById("mAccount"),ACCOUNTS);
   fillSelect(document.getElementById("movementTypeFilter"),["",...MOVEMENT_TYPES]);
   document.getElementById("movementTypeFilter").options[0].text="Todos";
+  document.getElementById("debtStatusFilter").addEventListener("change",renderDebts);
   document.getElementById("mDate").value=new Date().toISOString().slice(0,10);
   refreshDebtSelect();
   refreshReserveSelect();
@@ -1001,13 +1035,31 @@ function bind(){
   document.addEventListener("click",e=>{
     const del=e.target.closest("[data-delete-movement]");if(del&&confirm("¿Eliminar este movimiento?")){data.movements=data.movements.filter(m=>m.id!==del.dataset.deleteMovement);save();renderMovements()}
     const edit=e.target.closest("[data-edit-debt]");if(edit)openDebt(data.debts.find(d=>d.id===edit.dataset.editDebt));
+    const archive=e.target.closest("[data-archive-debt]");
+    if(archive){
+      const d=data.debts.find(x=>x.id===archive.dataset.archiveDebt);
+      if(d){
+        const remaining=debtOutstanding(d);
+        const warning=remaining>1?`\n\nLa herramienta todavía estima un saldo restante de ${money(remaining)}. Puedes archivarla igualmente si confirmaste con el acreedor que ya está cancelada.`:"";
+        if(confirm(`¿Cerrar y archivar “${d.name}”?${warning}\n\nSu historial de pagos se conservará y dejará de sumar en la deuda activa.`)){
+          d.status="archived";d.closedAt=todayIso();d.closedReason="Pagada / finalizada";save();refreshDebtSelect();renderDebts();renderDashboard();renderCapital();
+        }
+      }
+    }
+    const reactivate=e.target.closest("[data-reactivate-debt]");
+    if(reactivate){
+      const d=data.debts.find(x=>x.id===reactivate.dataset.reactivateDebt);
+      if(d&&confirm(`¿Reactivar “${d.name}”? Volverá a sumar en tus totales y a estar disponible para registrar pagos.`)){
+        d.status="active";d.closedAt="";d.closedReason="";save();refreshDebtSelect();renderDebts();renderDashboard();renderCapital();
+      }
+    }
     const editReserve=e.target.closest("[data-edit-reserve]");if(editReserve)openReserve(data.reserves.find(r=>r.id===editReserve.dataset.editReserve));
     const delReserveTxn=e.target.closest("[data-delete-reserve-txn]");if(delReserveTxn&&confirm("¿Eliminar este movimiento de fondo?")){data.reserveMovements=data.reserveMovements.filter(t=>t.id!==delReserveTxn.dataset.deleteReserveTxn);save();renderCapital();renderDashboard();renderPlan()}
     const delRec=e.target.closest("[data-delete-reconcile]");
     if(delRec&&confirm("¿Eliminar esta conciliación de saldo?")){data.reconciliations=data.reconciliations.filter(r=>r.id!==delRec.dataset.deleteReconcile);save();renderDashboard();renderPlan()}
     const pay=e.target.closest("[data-pay-debt]");
     if(pay){
-      const d=data.debts.find(x=>x.id===pay.dataset.payDebt);navigate("movements");
+      const d=data.debts.find(x=>x.id===pay.dataset.payDebt);if(!d||debtStatus(d)==="archived")return;navigate("movements");
       document.getElementById("mType").value="Pago deuda";
       document.getElementById("mDebt").value=d.id;
       document.getElementById("mCategory").value=d.type==="Préstamo"?"Préstamo BN":d.type==="Tarjeta"?"Tarjetas / acuerdos":"Otros";
@@ -1043,11 +1095,13 @@ function bind(){
   document.getElementById("cancelDebtBtn").addEventListener("click",()=>document.getElementById("debtDialog").close());
   document.getElementById("debtForm").addEventListener("submit",e=>{
     e.preventDefault();const did=document.getElementById("dId").value;
-    const obj={id:did||id(),type:document.getElementById("dType").value,name:document.getElementById("dName").value.trim(),usd:num(document.getElementById("dUsd").value),crc:num(document.getElementById("dCrc").value),fx:num(document.getElementById("dFx").value),limit:num(document.getElementById("dLimit").value),minimum:num(document.getElementById("dMinimum").value),payDay:document.getElementById("dPayDay").value.trim(),rate:document.getElementById("dRate").value.trim(),priority:num(document.getElementById("dPriority").value),goal:document.getElementById("dGoal").value.trim(),notes:document.getElementById("dNotes").value.trim()};
-    const i=data.debts.findIndex(d=>d.id===did),oldName=i>=0?data.debts[i].name:"";
+    const status=document.getElementById("dStatus").value;
+    const obj={id:did||id(),type:document.getElementById("dType").value,name:document.getElementById("dName").value.trim(),status,usd:num(document.getElementById("dUsd").value),crc:num(document.getElementById("dCrc").value),fx:num(document.getElementById("dFx").value),limit:num(document.getElementById("dLimit").value),minimum:num(document.getElementById("dMinimum").value),payDay:document.getElementById("dPayDay").value.trim(),rate:document.getElementById("dRate").value.trim(),priority:num(document.getElementById("dPriority").value),goal:document.getElementById("dGoal").value.trim(),notes:document.getElementById("dNotes").value.trim()};
+    const i=data.debts.findIndex(d=>d.id===did),old=i>=0?data.debts[i]:null,oldName=old?.name||"";
+    if(status==="archived"){obj.closedAt=old?.closedAt||todayIso();obj.closedReason=old?.closedReason||"Pagada / finalizada"}else{obj.closedAt="";obj.closedReason=""}
     i>=0?data.debts[i]=obj:data.debts.push(obj);
     if(i>=0&&oldName!==obj.name)data.movements.filter(m=>m.debtId===obj.id||(!m.debtId&&m.debt===oldName)).forEach(m=>{m.debtId=obj.id;m.debt=obj.name});
-    save();document.getElementById("debtDialog").close();refreshDebtSelect();renderDebts()
+    save();document.getElementById("debtDialog").close();refreshDebtSelect();renderDebts();renderDashboard();renderCapital()
   });
 
   document.getElementById("newQuarterBtn").addEventListener("click",()=>{
@@ -1067,7 +1121,7 @@ function bind(){
   document.getElementById("exportBtn").addEventListener("click",()=>download(`respaldo-finanzas-${new Date().toISOString().slice(0,10)}.json`,JSON.stringify(data,null,2),"application/json"));
   document.getElementById("importBtn").addEventListener("click",()=>document.getElementById("importFile").click());
   document.getElementById("importFile").addEventListener("change",async e=>{
-    try{const imported=JSON.parse(await e.target.files[0].text());if(!imported.periods||!imported.movements||!imported.debts)throw Error();data=migrateData(imported);save();syncQuarterSelectors();refreshDebtSelect();refreshReserveSelect();navigate("dashboard");alert("Respaldo restaurado y actualizado a la versión 5.")}catch{alert("El archivo no es un respaldo válido.")}e.target.value=""
+    try{const imported=JSON.parse(await e.target.files[0].text());if(!imported.periods||!imported.movements||!imported.debts)throw Error();data=migrateData(imported);save();syncQuarterSelectors();refreshDebtSelect();refreshReserveSelect();navigate("dashboard");alert("Respaldo restaurado y actualizado a la versión 5.1.")}catch{alert("El archivo no es un respaldo válido.")}e.target.value=""
   });
   document.getElementById("resetBtn").addEventListener("click",()=>{if(confirm("Esto eliminará todos los cambios locales. ¿Continuar?")){data=migrateData(clone(initialData));save();syncQuarterSelectors();refreshDebtSelect();refreshReserveSelect();navigate("dashboard")}});
 
@@ -1088,7 +1142,7 @@ function bind(){
 function refreshDebtSelect(selected=""){
   const el=document.getElementById("mDebt");if(!el)return;
   const current=selected||el.value;
-  fillObjectSelect(el,[{value:"",label:"Sin deuda"},...data.debts.map(d=>({value:d.id,label:d.name}))],current);
+  fillObjectSelect(el,[{value:"",label:"Sin deuda"},...activeDebts().map(d=>({value:d.id,label:d.name}))],current);
 }
 
 bind();renderDashboard();
