@@ -126,7 +126,7 @@
 <div class="app">
 <header>
   <div class="topbar">
-    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v5.2.1</small></div>
+    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v5.2.2</small></div>
     <nav id="nav">
       <button data-view="dashboard" class="active">Inicio</button>
       <button data-view="plan">Presupuesto</button>
@@ -363,6 +363,27 @@
 <script>
 "use strict";
 const STORAGE_KEY = "daniel_finanzas_local_v1";
+const UI_STORAGE_KEY = "daniel_finanzas_ui_v1";
+function loadUiState(){
+  try{
+    const saved=localStorage.getItem(UI_STORAGE_KEY);
+    const parsed=saved?JSON.parse(saved):{};
+    return parsed&&typeof parsed==="object"?parsed:{};
+  }catch{return {}}
+}
+let uiState=loadUiState();
+function saveUiState(){
+  try{localStorage.setItem(UI_STORAGE_KEY,JSON.stringify(uiState))}catch{}
+}
+function planMonthOpenPreference(month){
+  return uiState.planMonths?.[month]!==false;
+}
+function rememberPlanMonthOpen(month,open){
+  if(!month)return;
+  uiState.planMonths=uiState.planMonths||{};
+  uiState.planMonths[month]=!!open;
+  saveUiState();
+}
 
 const INCOME_CATEGORIES = ["Ingreso Daniel","Ayuda mamá","Ingreso Filtro","Ingreso freelance","Otros ingresos"];
 const EXPENSE_CATEGORIES = ["Préstamo BN","Tarjetas / acuerdos","Comida","Transporte","Nutricionista","Gimnasio","Pelo","Teléfonos","Ocio","Otros"];
@@ -868,15 +889,16 @@ function categoryTable(rows){
   }</tbody></table>`
 }
 
-function setPlanMonthOpen(section,open){
+function setPlanMonthOpen(section,open,persist=true){
   if(!section)return;
   const body=section.querySelector(".plan-month-body"),btn=section.querySelector(".plan-month-toggle");
   if(body)body.hidden=!open;
   section.classList.toggle("is-collapsed",!open);
   if(btn){btn.setAttribute("aria-expanded",String(open));btn.textContent=open?"Ocultar detalle":"Ver quincenas"}
+  if(persist)rememberPlanMonthOpen(section.dataset.planMonth,open);
 }
 function setAllPlanMonths(open){
-  document.querySelectorAll("#planMonths .plan-month").forEach(section=>setPlanMonthOpen(section,open));
+  document.querySelectorAll("#planMonths .plan-month").forEach(section=>setPlanMonthOpen(section,open,true));
 }
 
 function renderPlan(){
@@ -963,6 +985,9 @@ function renderPlan(){
   }).join("");
 
   document.getElementById("planMonths").innerHTML=monthHtml||`<div class="empty">Este trimestre todavía no tiene quincenas configuradas.</div>`;
+  document.querySelectorAll("#planMonths .plan-month").forEach(section=>{
+    setPlanMonthOpen(section,planMonthOpenPreference(section.dataset.planMonth),false);
+  });
   document.getElementById("planSummary").textContent=`Saldo final actualizado ${money(last)} · diferencia vs. plan ${delta>=0?"+":""}${money(delta)}`;
   document.getElementById("planClosing").innerHTML=`
     <div class="month-kpi"><div class="summary-label">Saldo inicial</div><div class="summary-value">${money(firstOpening)}</div></div>
