@@ -73,6 +73,49 @@
     @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.charts{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:900px){.mini-grid{grid-template-columns:1fr 1fr}}
     @media(max-width:680px){.topbar{align-items:flex-start;flex-wrap:wrap}.header-actions{margin-left:0}.kpis{grid-template-columns:1fr}.form-grid{grid-template-columns:1fr}.form-grid .wide{grid-column:auto}main{padding:14px}.brand{width:100%}}
+    /* Presupuesto v5.2.1: trimestre visible, meses separados, mini tablas y saldo compacto */
+    .plan-quarter-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+    .plan-quarter-summary .summary-box{background:var(--card);border:1px solid #e4e7ec;border-radius:12px;padding:13px 14px;box-shadow:var(--shadow);min-width:0}
+    .summary-label{font-size:.72rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+    .summary-value{font-size:1.12rem;font-weight:850;margin-top:5px;overflow-wrap:anywhere}
+    .plan-months{display:grid;gap:18px}
+    .plan-month{background:var(--card);border:1px solid #dfe4ea;border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+    .plan-month-header{display:flex;justify-content:space-between;gap:14px;align-items:center;padding:15px 16px;border-bottom:1px solid var(--border);background:#fbfcfd}
+    .plan-month-title{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.plan-month-title h2{font-size:1.08rem;margin:0}
+    .plan-month-sub{margin-top:5px;color:var(--muted);font-size:.82rem}
+    .plan-month-body{padding:14px 16px 16px}
+    .plan-month-body[hidden]{display:none}
+    .month-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin-bottom:14px}
+    .month-kpi{background:#f8fafb;border:1px solid #e7eaee;border-radius:9px;padding:9px 10px;min-width:0}
+    .month-kpi .summary-label{font-size:.66rem}.month-kpi .summary-value{font-size:.94rem}
+    .fortnight-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+    .fortnight-card{border:1px solid #e4e7ec;border-radius:12px;overflow:hidden;min-width:0;background:#fff}
+    .fortnight-head{padding:12px 13px;background:var(--blue);border-bottom:1px solid #d9e3ed;display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .fortnight-head strong{display:block;color:var(--navy)}
+    .fortnight-head small{color:var(--muted)}
+    .fortnight-meta{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;padding:11px 13px;border-bottom:1px solid #eaecf0}
+    .fortnight-meta .meta-item{min-width:0}.fortnight-meta .meta-item.wide{grid-column:1/-1}
+    .fortnight-meta label{display:block;font-size:.67rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.035em;margin-bottom:4px}
+    .fortnight-meta .meta-value{font-weight:800;font-size:.9rem}
+    .fortnight-meta .editable{width:100%;min-width:0;background:#fff;border-color:#d0d5dd}
+    .fortnight-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse}
+    .fortnight-table th{position:static;padding:8px 12px;font-size:.72rem;text-align:left}
+    .fortnight-table th:last-child{text-align:right;width:42%}
+    .fortnight-table td{padding:7px 12px}.fortnight-table td:last-child{text-align:right}
+    .fortnight-table .editable{width:100%;min-width:0;text-align:right;border-color:#e4e7ec;background:#fff}
+    .fortnight-total{display:grid;grid-template-columns:1fr auto;gap:8px;padding:10px 13px;border-top:1px solid #eaecf0;background:#fbfcfd;align-items:center}
+    .fortnight-total strong:last-child{text-align:right;font-variant-numeric:tabular-nums}
+    .plan-month-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:flex-end}
+    .plan-month-compact-balance{display:none;align-items:center;gap:8px;background:#f8fafb;border:1px solid #e4e7ec;border-radius:9px;padding:7px 10px;white-space:nowrap}
+    .plan-month-compact-balance span{font-size:.68rem;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.035em}
+    .plan-month-compact-balance strong{font-size:.98rem;font-variant-numeric:tabular-nums}
+    .plan-month.is-collapsed .plan-month-compact-balance{display:flex}
+    .plan-month.is-collapsed .plan-month-header{border-bottom:0}
+    .plan-month-toggle{white-space:nowrap}
+    @media(max-width:1000px){.plan-quarter-summary,.month-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+    @media(max-width:820px){.fortnight-grid{grid-template-columns:1fr}}
+    @media(max-width:680px){.plan-quarter-summary,.month-kpis{grid-template-columns:1fr 1fr}.plan-month-header{align-items:flex-start}.fortnight-meta{grid-template-columns:1fr}.fortnight-meta .meta-item.wide{grid-column:auto}}
+    @media(max-width:430px){.plan-quarter-summary,.month-kpis{grid-template-columns:1fr}.plan-month-header{display:block}.plan-month-actions{margin-top:10px;justify-content:stretch}.plan-month-compact-balance{width:100%;justify-content:space-between}.plan-month-toggle{width:100%}}
     @media print{header,.toolbar,.btn,footer{display:none!important}main{max-width:none;padding:0}.view{display:none!important}.view.active{display:block!important}.card{box-shadow:none}}
   
 .archived-row{opacity:.72;background:rgba(102,112,133,.05)}
@@ -83,7 +126,7 @@
 <div class="app">
 <header>
   <div class="topbar">
-    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v5.1</small></div>
+    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v5.2.1</small></div>
     <nav id="nav">
       <button data-view="dashboard" class="active">Inicio</button>
       <button data-view="plan">Presupuesto</button>
@@ -129,17 +172,21 @@
   </section>
 
   <section class="view" id="view-plan">
-    <h1>Presupuesto por mes y quincena</h1>
-    <p class="sub">El flujo ahora es adaptativo: un saldo real conciliado o un cierre real de la quincena puede modificar el saldo base de las quincenas siguientes.</p>
+    <h1>Presupuesto trimestral</h1>
+    <p class="sub">Los tres meses permanecen visibles dentro del trimestre, pero cada mes se separa en dos mini tablas quincenales para evitar el desplazamiento horizontal.</p>
     <div class="toolbar">
       <div><label>Trimestre</label><select id="planQuarter"></select></div>
       <button class="btn" id="newQuarterBtn">Crear trimestre</button>
       <button class="btn secondary" id="duplicateQuarterBtn">Duplicar trimestre</button>
+      <button class="btn secondary" id="expandPlanBtn" type="button">Ver todo</button>
+      <button class="btn secondary" id="collapsePlanBtn" type="button">Compactar</button>
     </div>
-    <div class="note"><strong>Regla de lectura:</strong> pago del 28 = 1.ª quincena del mes siguiente; pago del 14 = 2.ª quincena del mes actual. <strong>Proyección adaptativa:</strong> cuando concilias tu saldo real, ese monto se vuelve el nuevo punto de partida. La herramienta reserva únicamente el presupuesto que todavía queda por ejecutar en la quincena actual y arrastra el resultado actualizado hacia las quincenas futuras.</div>
-    <div class="card table-card">
-      <div class="table-head"><strong>Proyección</strong><span class="pill" id="planSummary"></span></div>
-      <div class="table-wrap"><table id="planTable"></table></div>
+    <div class="note"><strong>Regla de lectura:</strong> pago del 28 = 1.ª quincena del mes siguiente; pago del 14 = 2.ª quincena del mes actual. <strong>Proyección adaptativa:</strong> al conciliar tu saldo real, ese monto se vuelve el nuevo punto de partida y se arrastra hacia las quincenas futuras.</div>
+    <div id="planQuarterSummary" class="plan-quarter-summary"></div>
+    <div id="planMonths" class="plan-months"></div>
+    <div class="card" style="margin-top:18px">
+      <div class="table-head" style="padding:0 0 12px;border-bottom:1px solid var(--border)"><strong>Cierre del trimestre</strong><span class="pill" id="planSummary"></span></div>
+      <div id="planClosing" class="month-kpis" style="margin:14px 0 0"></div>
     </div>
   </section>
 
@@ -245,7 +292,7 @@
     </div>
   </section>
 </main>
-<footer>Aplicación local v5.1 · Flujo operativo, capital protegido, metas y archivo de deudas · No envía información a ningún servidor.</footer>
+<footer>Aplicación local v5.2.1 · Presupuesto trimestral por mini tablas, saldo proyectado compacto, flujo operativo, capital protegido, metas y archivo de deudas · No envía información a ningún servidor.</footer>
 </div>
 
 <dialog id="reserveDialog">
@@ -474,7 +521,7 @@ function migrateData(raw){
     const linked=raw.periods.find(p=>periodKey(p)===m.period);if(linked)m.quarter=budgetQuarter(linked);
   });
   raw.quarters=planningQuartersFrom(raw.periods);
-  raw.version=5.1;
+  raw.version=5.21;
   return raw;
 }
 function load(){
@@ -821,31 +868,107 @@ function categoryTable(rows){
   }</tbody></table>`
 }
 
+function setPlanMonthOpen(section,open){
+  if(!section)return;
+  const body=section.querySelector(".plan-month-body"),btn=section.querySelector(".plan-month-toggle");
+  if(body)body.hidden=!open;
+  section.classList.toggle("is-collapsed",!open);
+  if(btn){btn.setAttribute("aria-expanded",String(open));btn.textContent=open?"Ocultar detalle":"Ver quincenas"}
+}
+function setAllPlanMonths(open){
+  document.querySelectorAll("#planMonths .plan-month").forEach(section=>setPlanMonthOpen(section,open));
+}
+
 function renderPlan(){
   const q=document.getElementById("planQuarter").value||planningQuarters()[0], rows=getOpeningAndBalances(q);
   const staticRows=getStaticQuarterPeriods(q);
   const cats=["Préstamo BN","Tarjetas / acuerdos","Comida","Transporte","Nutricionista","Gimnasio","Pelo","Teléfonos","Ocio","Otros"];
-  const head=["Mes presupuestario","Quincena","Fecha real de ingreso","Saldo base actualizado","Base usada","Ingreso Daniel","Ayuda mamá","Otros ingresos","Disponible operativo",...cats,"Total egresos","Saldo final actualizado"];
-  let previousMonth="";
-  document.getElementById("planTable").innerHTML=`<thead><tr>${head.map(h=>`<th>${h}</th>`).join("")}</tr></thead><tbody>${
-    rows.map((r,i)=>{
-      const monthStart=r.budgetMonth!==previousMonth;previousMonth=r.budgetMonth;
-      return `<tr class="${monthStart?"month-start":""}">
-      <td><strong>${monthLabel(r.budgetMonth)}</strong></td>
-      <td class="center"><span class="pill">${r.fortnight===1?"1.ª":"2.ª"}</span></td>
-      <td><input class="editable" type="date" data-plan="${periodKey(r)}|date" value="${r.date}"></td>
-      <td class="num">${i===0?`<input class="editable" type="number" data-plan="${periodKey(r)}|opening" value="${r.openingCalc}">`:money(r.openingCalc)}</td>
-      <td><span class="pill">${r.projectionSource}</span></td>
-      <td><input class="editable" type="number" data-plan="${periodKey(r)}|income" value="${r.income}"></td>
-      <td><input class="editable" type="number" data-plan="${periodKey(r)}|momHelp" value="${num(r.momHelp)}"></td>
-      <td><input class="editable" type="number" data-plan="${periodKey(r)}|otherIncome" value="${r.otherIncome}"></td>
-      <td class="num">${money(r.available)}</td>
-      ${cats.map(c=>`<td><input class="editable" type="number" data-budget="${periodKey(r)}|${c}" value="${num(r.budgets[c])}"></td>`).join("")}
-      <td class="num">${money(r.expenses)}</td><td class="num ${r.ending<0?"negative":"positive"}">${money(r.ending)}</td>
-    </tr>`}).join("")
-  }</tbody>`;
+  const months=[...new Set(rows.map(r=>r.budgetMonth))];
+  const quarterIncome=rows.reduce((sum,r)=>sum+num(r.income)+num(r.momHelp)+num(r.otherIncome),0);
+  const quarterExpenses=rows.reduce((sum,r)=>sum+num(r.expenses),0);
+  const quarterFlow=quarterIncome-quarterExpenses;
+  const firstOpening=rows[0]?.openingCalc||0;
   const last=rows.at(-1)?.ending||0, original=staticRows.at(-1)?.ending||0, delta=last-original;
-  document.getElementById("planSummary").textContent=`Saldo final actualizado ${money(last)} · plan original ${money(original)} · diferencia ${delta>=0?"+":""}${money(delta)}`;
+
+  const summaryItems=[
+    ["Saldo inicial",money(firstOpening),""],
+    ["Ingresos trimestre",money(quarterIncome),""],
+    ["Egresos trimestre",money(quarterExpenses),""],
+    ["Flujo del trimestre",`${quarterFlow>=0?"+":""}${money(quarterFlow)}`,quarterFlow>=0?"positive":"negative"]
+  ];
+  document.getElementById("planQuarterSummary").innerHTML=summaryItems.map(([label,value,cls])=>`<div class="summary-box"><div class="summary-label">${label}</div><div class="summary-value ${cls}">${value}</div></div>`).join("");
+
+  const monthHtml=months.map((month,monthIndex)=>{
+    const monthRows=rows.filter(r=>r.budgetMonth===month).sort((a,b)=>num(a.fortnight)-num(b.fortnight));
+    const monthIncome=monthRows.reduce((sum,r)=>sum+num(r.income)+num(r.momHelp)+num(r.otherIncome),0);
+    const monthExpenses=monthRows.reduce((sum,r)=>sum+num(r.expenses),0);
+    const monthFlow=monthIncome-monthExpenses;
+    const monthOpening=monthRows[0]?.openingCalc||0;
+    const monthEnding=monthRows.at(-1)?.ending||monthOpening;
+
+    const fortnightHtml=monthRows.map((r,rowIndex)=>{
+      const key=periodKey(r);
+      const totalIncome=num(r.income)+num(r.momHelp)+num(r.otherIncome);
+      const openingEditable=(monthIndex===0&&rowIndex===0)
+        ? `<input class="editable" type="number" data-plan="${key}|opening" value="${r.openingCalc}">`
+        : `<div class="meta-value">${money(r.openingCalc)}</div>`;
+      return `<div class="fortnight-card">
+        <div class="fortnight-head">
+          <div><strong>${r.fortnight===1?"1.ª quincena":"2.ª quincena"}</strong><small>${r.fortnight===1?"Pago del 28 · presupuesto del mes siguiente":"Pago del 14 · presupuesto del mes actual"}</small></div>
+          <span class="pill">${dateLabel(r.date)}</span>
+        </div>
+        <div class="fortnight-meta">
+          <div class="meta-item"><label>Fecha real de ingreso</label><input class="editable" type="date" data-plan="${key}|date" value="${r.date}"></div>
+          <div class="meta-item"><label>Saldo base actualizado</label>${openingEditable}</div>
+          <div class="meta-item"><label>Ingreso Daniel</label><input class="editable" type="number" data-plan="${key}|income" value="${r.income}"></div>
+          <div class="meta-item"><label>Ayuda mamá</label><input class="editable" type="number" data-plan="${key}|momHelp" value="${num(r.momHelp)}"></div>
+          <div class="meta-item"><label>Otros ingresos</label><input class="editable" type="number" data-plan="${key}|otherIncome" value="${r.otherIncome}"></div>
+          <div class="meta-item"><label>Ingresos quincena</label><div class="meta-value">${money(totalIncome)}</div></div>
+          <div class="meta-item"><label>Disponible operativo</label><div class="meta-value">${money(r.available)}</div></div>
+          <div class="meta-item"><label>Base usada</label><div class="meta-value"><span class="pill">${r.projectionSource}</span></div></div>
+        </div>
+        <table class="fortnight-table">
+          <thead><tr><th>Categoría</th><th>Presupuesto</th></tr></thead>
+          <tbody>${cats.map(c=>`<tr><td>${c}</td><td><input class="editable" type="number" data-budget="${key}|${c}" value="${num(r.budgets[c])}"></td></tr>`).join("")}</tbody>
+        </table>
+        <div class="fortnight-total"><strong>Total egresos</strong><strong>${money(r.expenses)}</strong></div>
+        <div class="fortnight-total"><strong>Saldo final actualizado</strong><strong class="${r.ending<0?"negative":"positive"}">${money(r.ending)}</strong></div>
+      </div>`;
+    }).join("");
+
+    return `<section class="plan-month" data-plan-month="${month}">
+      <div class="plan-month-header">
+        <div>
+          <div class="plan-month-title"><h2>${monthLabel(month)}</h2>${monthIndex===0?`<span class="pill">Inicio del trimestre</span>`:""}</div>
+          <div class="plan-month-sub">Ingresos ${money(monthIncome)} · Egresos ${money(monthExpenses)} · Flujo <span class="${monthFlow>=0?"positive":"negative"}">${monthFlow>=0?"+":""}${money(monthFlow)}</span></div>
+        </div>
+        <div class="plan-month-actions">
+          <div class="plan-month-compact-balance" aria-label="Saldo proyectado al cierre del mes">
+            <span>Saldo proyectado</span>
+            <strong class="${monthEnding<0?"negative":"positive"}">${money(monthEnding)}</strong>
+          </div>
+          <button type="button" class="btn secondary small plan-month-toggle" data-toggle-plan-month="${month}" aria-expanded="true">Ocultar detalle</button>
+        </div>
+      </div>
+      <div class="plan-month-body">
+        <div class="month-kpis">
+          <div class="month-kpi"><div class="summary-label">Saldo inicial</div><div class="summary-value">${money(monthOpening)}</div></div>
+          <div class="month-kpi"><div class="summary-label">Ingresos</div><div class="summary-value">${money(monthIncome)}</div></div>
+          <div class="month-kpi"><div class="summary-label">Egresos</div><div class="summary-value">${money(monthExpenses)}</div></div>
+          <div class="month-kpi"><div class="summary-label">Saldo final</div><div class="summary-value ${monthEnding<0?"negative":"positive"}">${money(monthEnding)}</div></div>
+        </div>
+        <div class="fortnight-grid">${fortnightHtml}</div>
+      </div>
+    </section>`;
+  }).join("");
+
+  document.getElementById("planMonths").innerHTML=monthHtml||`<div class="empty">Este trimestre todavía no tiene quincenas configuradas.</div>`;
+  document.getElementById("planSummary").textContent=`Saldo final actualizado ${money(last)} · diferencia vs. plan ${delta>=0?"+":""}${money(delta)}`;
+  document.getElementById("planClosing").innerHTML=`
+    <div class="month-kpi"><div class="summary-label">Saldo inicial</div><div class="summary-value">${money(firstOpening)}</div></div>
+    <div class="month-kpi"><div class="summary-label">Ingresos</div><div class="summary-value">${money(quarterIncome)}</div></div>
+    <div class="month-kpi"><div class="summary-label">Egresos</div><div class="summary-value">${money(quarterExpenses)}</div></div>
+    <div class="month-kpi"><div class="summary-label">Saldo final proyectado</div><div class="summary-value ${last<0?"negative":"positive"}">${money(last)}</div></div>`;
 }
 function renderMovements(){
   const level=document.getElementById("movementLevel").value;
@@ -982,6 +1105,14 @@ function bind(){
   document.getElementById("rtDate").value=todayIso();
 
   document.getElementById("planQuarter").addEventListener("change",renderPlan);
+  document.getElementById("expandPlanBtn").addEventListener("click",()=>setAllPlanMonths(true));
+  document.getElementById("collapsePlanBtn").addEventListener("click",()=>setAllPlanMonths(false));
+  document.getElementById("planMonths").addEventListener("click",e=>{
+    const btn=e.target.closest("[data-toggle-plan-month]");if(!btn)return;
+    const month=btn.dataset.togglePlanMonth, section=document.querySelector(`[data-plan-month="${month}"]`);
+    if(!section)return;const open=btn.getAttribute("aria-expanded")!=="true";
+    setPlanMonthOpen(section,open);
+  });
   ["dashboard","movement","report"].forEach(prefix=>{
     document.getElementById(prefix+"Level").addEventListener("change",()=>{
       syncPeriodFilter(prefix);
