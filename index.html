@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#17324d">
-  <title>Finanzas de Daniel</title>
+  <title>Finanzas de Daniel · Flujo, capital y metas</title>
   <style>
     :root{
       --navy:#17324d;--teal:#2f7477;--bg:#f5f7f9;--card:#fff;--text:#17212b;
@@ -69,6 +69,16 @@
     .reserve-tag{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:.75rem;font-weight:800;background:#eef2f6;color:var(--navy)}
     .reserve-tag.protected{background:#eaf1f8}.reserve-tag.goal{background:#e6f2e8}
     .mini-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.mini-grid .field{min-width:0}
+    .chart-card-title{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+    .chart-legend{display:flex;gap:12px;flex-wrap:wrap;align-items:center;color:var(--muted);font-size:.76rem;font-weight:700}
+    .chart-legend-item{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+    .legend-box{width:12px;height:12px;border-radius:3px;display:inline-block;flex:0 0 auto}
+    .legend-line{width:22px;height:0;border-top:3px solid;display:inline-block;flex:0 0 auto}
+    .legend-line.dashed{border-top-style:dashed}
+    .legend-budget{background:#2563eb}
+    .legend-actual-expense{background:#f97316}
+    .legend-projected{border-color:#7c3aed}
+    .legend-actual-balance{border-color:#059669}
     footer{max-width:1440px;margin:0 auto;padding:0 22px 24px;color:var(--muted);font-size:.78rem}
     @media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.charts{grid-template-columns:1fr}.form-grid{grid-template-columns:repeat(2,1fr)}}
     @media(max-width:900px){.mini-grid{grid-template-columns:1fr 1fr}}
@@ -126,7 +136,7 @@
 <div class="app">
 <header>
   <div class="topbar">
-    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v6</small></div>
+    <div class="brand">Finanzas de Daniel <small style="opacity:.7">v5.2.3</small></div>
     <nav id="nav">
       <button data-view="dashboard" class="active">Inicio</button>
       <button data-view="plan">Presupuesto</button>
@@ -162,8 +172,26 @@
     <div class="grid kpis" id="kpiGrid"></div>
     <div class="card reconcile" id="reconcileStatus" style="margin-top:16px"></div>
     <div class="grid charts">
-      <div class="card"><strong>Egresos: presupuesto vs. real</strong><canvas id="expenseChart"></canvas></div>
-      <div class="card"><strong>Flujo de caja</strong><canvas id="cashChart"></canvas></div>
+      <div class="card">
+        <div class="chart-card-title">
+          <strong>Egresos: presupuesto vs. real</strong>
+          <div class="chart-legend" aria-label="Leyenda del gráfico de egresos">
+            <span class="chart-legend-item"><span class="legend-box legend-budget"></span>Presupuesto</span>
+            <span class="chart-legend-item"><span class="legend-box legend-actual-expense"></span>Real</span>
+          </div>
+        </div>
+        <canvas id="expenseChart" aria-label="Gráfico de egresos presupuestados y reales"></canvas>
+      </div>
+      <div class="card">
+        <div class="chart-card-title">
+          <strong>Flujo de caja</strong>
+          <div class="chart-legend" aria-label="Leyenda del gráfico de flujo de caja">
+            <span class="chart-legend-item"><span class="legend-line legend-projected"></span>Saldo proyectado</span>
+            <span class="chart-legend-item"><span class="legend-line dashed legend-actual-balance"></span>Saldo real</span>
+          </div>
+        </div>
+        <canvas id="cashChart" aria-label="Gráfico de saldo proyectado y saldo real"></canvas>
+      </div>
     </div>
     <div class="card" style="margin-top:16px">
       <strong>Estado por categoría</strong>
@@ -292,7 +320,7 @@
     </div>
   </section>
 </main>
-<footer>Aplicación local v5.2.1 · Presupuesto trimestral por mini tablas, saldo proyectado compacto, flujo operativo, capital protegido, metas y archivo de deudas · No envía información a ningún servidor.</footer>
+<footer>Aplicación local v5.2.3 · Presupuesto trimestral por mini tablas, saldo proyectado compacto, flujo operativo, capital protegido, metas y archivo de deudas · No envía información a ningún servidor.</footer>
 </div>
 
 <dialog id="reserveDialog">
@@ -1086,7 +1114,7 @@ function drawBarChart(canvas,labels,a,b){
   ctx.strokeStyle="#d0d5dd";ctx.fillStyle="#667085";ctx.font="12px system-ui";
   for(let i=0;i<=4;i++){const y=p.t+plotH*i/4;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(money(max*(1-i/4)).replace("CRC","").trim(),2,y+4)}
   labels.forEach((l,i)=>{const bw=Math.min(24,group*.28),x=p.l+i*group+group/2;const ah=a[i]/max*plotH,bh=b[i]/max*plotH;
-    ctx.fillStyle="#2f7477";ctx.fillRect(x-bw-2,p.t+plotH-ah,bw,ah);ctx.fillStyle="#17324d";ctx.fillRect(x+2,p.t+plotH-bh,bw,bh);
+    ctx.fillStyle="#2563eb";ctx.fillRect(x-bw-2,p.t+plotH-ah,bw,ah);ctx.fillStyle="#f97316";ctx.fillRect(x+2,p.t+plotH-bh,bw,bh);
     ctx.fillStyle="#667085";ctx.textAlign="center";ctx.fillText(l,x,h-14)
   });ctx.textAlign="left";
 }
@@ -1095,13 +1123,14 @@ function drawLineChart(canvas,labels,a,b){
   const {ctx,w,h,p}=drawBase(canvas), min=Math.min(0,...valid), max=Math.max(1,...valid), span=max-min||1, plotW=w-p.l-p.r,plotH=h-p.t-p.b;
   ctx.strokeStyle="#d0d5dd";ctx.fillStyle="#667085";ctx.font="12px system-ui";
   for(let i=0;i<=4;i++){const y=p.t+plotH*i/4;ctx.beginPath();ctx.moveTo(p.l,y);ctx.lineTo(w-p.r,y);ctx.stroke();ctx.fillText(money(max-span*i/4).replace("CRC","").trim(),2,y+4)}
-  function line(vals,color){
-    ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2;ctx.beginPath();let started=false;
+  function line(vals,color,dashed=false){
+    ctx.save();ctx.strokeStyle=color;ctx.fillStyle=color;ctx.lineWidth=2.5;ctx.setLineDash(dashed?[7,5]:[]);ctx.beginPath();let started=false;
     vals.forEach((v,i)=>{if(v===null||v===undefined)return;const x=p.l+(labels.length===1?0:i*plotW/(labels.length-1)),y=p.t+(max-Number(v))/span*plotH;if(started)ctx.lineTo(x,y);else{ctx.moveTo(x,y);started=true}});
-    ctx.stroke();
-    vals.forEach((v,i)=>{if(v===null||v===undefined)return;const x=p.l+(labels.length===1?0:i*plotW/(labels.length-1)),y=p.t+(max-Number(v))/span*plotH;ctx.beginPath();ctx.arc(x,y,3,0,Math.PI*2);ctx.fill()})
+    ctx.stroke();ctx.setLineDash([]);
+    vals.forEach((v,i)=>{if(v===null||v===undefined)return;const x=p.l+(labels.length===1?0:i*plotW/(labels.length-1)),y=p.t+(max-Number(v))/span*plotH;ctx.beginPath();ctx.arc(x,y,dashed?4:3.5,0,Math.PI*2);dashed?ctx.stroke():ctx.fill()});
+    ctx.restore()
   }
-  line(a,"#2f7477");line(b,"#17324d");labels.forEach((l,i)=>{const x=p.l+(labels.length===1?0:i*plotW/(labels.length-1));ctx.fillStyle="#667085";ctx.textAlign="center";ctx.fillText(l,x,h-14)});ctx.textAlign="left";
+  line(a,"#7c3aed",false);line(b,"#059669",true);labels.forEach((l,i)=>{const x=p.l+(labels.length===1?0:i*plotW/(labels.length-1));ctx.fillStyle="#667085";ctx.textAlign="center";ctx.fillText(l,x,h-14)});ctx.textAlign="left";
 }
 
 function openDebt(d=null){
