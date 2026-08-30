@@ -432,7 +432,7 @@
     </div>
   </section>
 </main>
-<footer>Aplicación local v5.6.1 · Por cobrar con arrastre automático de pendientes, cobros sin grupo, agrupación múltiple y recurrencias mensuales, filtros financieros, capital protegido, metas archivables y archivo de deudas · No envía información a ningún servidor.</footer>
+<footer>Aplicación local v5.7.1 · Por cobrar con arrastre automático de pendientes, cobros sin grupo, agrupación múltiple y recurrencias mensuales, filtros financieros, capital protegido, metas archivables y archivo de deudas · No envía información a ningún servidor.</footer>
 </div>
 
 <dialog id="sharedGroupDialog">
@@ -455,7 +455,7 @@
       <input type="hidden" id="scId">
       <div class="field"><label>Grupo (opcional)</label><select id="scGroup"></select></div>
       <div class="field"><label>Persona</label><input id="scPerson" required></div>
-      <div class="field"><label>Mes de cobro</label><input type="month" id="scMonth" required></div>
+      <div class="field"><label>Mes de cobro</label><select id="scMonth" required></select></div>
       <div class="field"><label>Fecha del cargo</label><input type="date" id="scDate" required></div>
       <div class="field"><label>Tipo</label><select id="scKind"><option>Suscripción</option><option>Préstamo</option><option>Compra compartida</option><option>Uso / consumo</option><option>Otro</option></select></div>
       <div class="field wide"><label>Concepto / detalle</label><input id="scDescription" placeholder="Ej. Netflix, préstamo, cena, compra de entradas" required></div>
@@ -1472,15 +1472,36 @@ function deleteSharedGroup(group){
   data.sharedChargeGroups=(data.sharedChargeGroups||[]).filter(g=>g.id!==group.id);
   sharedSelectedChargeIds.clear();save();refreshSharedGroupSelects();renderSharedCharges();
 }
+function monthOffset(key,delta){
+  if(!key)return "";
+  const [year,month]=String(key).split("-").map(Number);
+  const d=new Date(Date.UTC(year,month-1+delta,1));
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,"0")}`;
+}
+function sharedChargeMonthOptions(baseMonth){
+  const base=baseMonth||selectedReceivableMonth()||monthKey(todayIso());
+  const months=[...new Set([
+    ...Array.from({length:19},(_,i)=>monthOffset(base,i-6)),
+    ...data.periods.map(p=>p.budgetMonth||deriveBudgetMeta(p).budgetMonth),
+    ...(data.sharedCharges||[]).map(c=>c.chargeMonth||monthKey(c.date)),
+    base
+  ].filter(Boolean))].sort();
+  return months.map(m=>({value:m,label:monthLabel(m)}));
+}
+function refreshSharedChargeMonthSelect(selected){
+  const chosen=selected||selectedReceivableMonth()||monthKey(todayIso());
+  const el=document.getElementById("scMonth");
+  fillObjectSelect(el,sharedChargeMonthOptions(chosen),chosen);
+}
 function openSharedCharge(c=null,preferredGroupId=""){
   document.getElementById("sharedChargeDialogTitle").textContent=c?"Editar cobro":"Agregar cobro";
   if(!c&&preferredGroupId){const g=sharedGroupById(preferredGroupId);if(g&&sharedGroupStatus(g)==="archived")return alert("Ese grupo está archivado. Reactívalo para agregar nuevos cobros.");}
   const preferred=c?.groupId||preferredGroupId||"";refreshSharedGroupSelects(preferred);
-  const group=sharedGroupById(preferred), selectedMonth=selectedReceivableMonth(), recurring=!!c?.sourceRecurringId;
+  const group=sharedGroupById(preferred), selectedMonth=selectedReceivableMonth(), recurring=!!c?.sourceRecurringId, chargeMonth=c?.chargeMonth||selectedMonth;
   document.getElementById("scId").value=c?.id||"";
   document.getElementById("scGroup").value=preferred;
   document.getElementById("scPerson").value=c?.person||group?.person||"";
-  document.getElementById("scMonth").value=c?.chargeMonth||selectedMonth;
+  refreshSharedChargeMonthSelect(chargeMonth);
   document.getElementById("scDate").value=c?.date||todayIso();
   document.getElementById("scKind").value=c?.kind||"Uso / consumo";
   document.getElementById("scDescription").value=c?.description||"";
