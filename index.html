@@ -498,6 +498,256 @@ html[data-theme="dark"] #view-capital select{color-scheme:dark}
 @media(max-width:680px){.report-commandbar>div,.report-commandbar .report-control-wide{min-width:0;flex:1 1 140px}.report-quick{order:8;margin-left:0;width:100%}.report-quick button{flex:1}.report-kpis,.report-signal-stack,.report-comparison,.report-current-summary,.report-future-summary,.report-scenario-result{grid-template-columns:1fr 1fr}.report-hero{padding:19px}.report-hero-value{font-size:2.1rem}.report-mode{width:100%;overflow:auto}.report-chart-head{flex-direction:column}.report-progress-row{grid-template-columns:1fr}.report-chart-card.featured canvas{height:290px}}
 @media(max-width:430px){.report-kpis,.report-signal-stack,.report-comparison,.report-current-summary,.report-future-summary,.report-scenario-result{grid-template-columns:1fr}.report-hero-breakdown{gap:12px}.report-commandbar{padding:7px}}
 
+
+/* ==========================================================
+   Rastro v7 · Minimal UX / UI
+   Mantiene la paleta, el logo actual y el almacenamiento local.
+   ========================================================== */
+:root{
+  --v7-radius:14px;
+  --v7-radius-sm:10px;
+  --v7-blue:var(--accent);
+  --v7-green:var(--success);
+  --v7-red:var(--danger);
+  --v7-purple:#7c5cff;
+  --v7-soft-blue:color-mix(in srgb,var(--accent) 9%,var(--surface));
+  --v7-soft-green:color-mix(in srgb,var(--success) 9%,var(--surface));
+  --v7-soft-red:color-mix(in srgb,var(--danger) 8%,var(--surface));
+  --v7-soft-purple:color-mix(in srgb,#7c5cff 9%,var(--surface));
+}
+body{font-size:14px;letter-spacing:-.005em}
+header{width:220px;background:color-mix(in srgb,var(--sidebar) 96%,var(--surface))}
+.topbar{padding:16px 12px}
+.brand{padding:5px 8px 18px;border-bottom:0}
+.brand-logo{height:36px;max-width:126px} /* logo/tipografía original de Rastro */
+.brand-version{opacity:.52;margin-left:auto}
+nav{gap:4px}
+nav button{
+  display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;
+  font-size:.86rem;color:var(--muted);transition:background .15s ease,color .15s ease,transform .15s ease
+}
+nav button:hover{transform:translateX(1px)}
+nav button.active{background:var(--v7-soft-blue);color:var(--accent);font-weight:680}
+.nav-icon{width:20px;height:20px;display:grid;place-items:center;font-size:1.05rem;line-height:1;color:currentColor}
+main{margin-left:220px;padding:44px 38px 70px}
+.view{max-width:1420px}
+.header-actions{top:18px;right:26px;border-radius:12px;padding:4px;box-shadow:0 8px 28px rgba(15,23,42,.06)}
+.header-actions>button,.header-actions .fx-button{border-radius:8px}
+.sidebar-toggle{left:206px}
+
+.v7-page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;margin-bottom:24px;padding-right:210px}
+.v7-page-head h1,.report-studio-head h1{font-size:2.75rem;line-height:1.04;letter-spacing:-.055em;font-weight:760;margin:0 0 7px}
+.v7-page-head .sub,.report-studio-head .sub{font-size:1.03rem;line-height:1.5;margin:0;max-width:780px;color:color-mix(in srgb,var(--muted) 92%,transparent)}
+.v7-eyebrow,.report-eyebrow{font-size:.69rem;letter-spacing:.11em;text-transform:uppercase;font-weight:760;color:color-mix(in srgb,var(--muted) 88%,transparent);margin-bottom:7px}
+.v7-page-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:4px}
+
+.v7-card,.v7-hero-card{
+  background:var(--surface);border:1px solid color-mix(in srgb,var(--border) 88%,transparent);
+  border-radius:var(--v7-radius);box-shadow:0 1px 2px rgba(15,23,42,.025),0 10px 30px rgba(15,23,42,.025)
+}
+.v7-card{padding:18px}
+.v7-hero-card{
+  min-height:150px;padding:26px 28px;display:grid;grid-template-columns:minmax(0,1.4fr) minmax(280px,.6fr);
+  gap:26px;align-items:center;margin-bottom:16px
+}
+.v7-hero-main{min-width:0}
+.v7-kicker{font-size:.8rem;font-weight:680;color:var(--text);margin-bottom:8px}
+.v7-hero-value{font-size:3.2rem;line-height:1;font-weight:790;letter-spacing:-.055em;font-variant-numeric:tabular-nums}
+.v7-hero-delta{margin-top:10px;font-size:.78rem;color:var(--muted)}
+.v7-hero-delta.good{color:var(--success)}.v7-hero-delta.bad{color:var(--danger)}
+.v7-hero-note{
+  min-height:92px;border-left:1px solid var(--border);padding:10px 4px 10px 30px;display:flex;flex-direction:column;justify-content:center
+}
+.v7-hero-note strong{font-size:.94rem;color:var(--text);display:block;margin-bottom:5px}
+.v7-hero-note span{font-size:.79rem;line-height:1.48;color:var(--muted)}
+
+.v7-kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:0 0 16px}
+.v7-kpi{
+  min-height:112px;background:var(--surface);border:1px solid var(--border);border-radius:var(--v7-radius-sm);
+  padding:17px 18px;display:grid;grid-template-columns:42px minmax(0,1fr);gap:12px;align-items:start
+}
+.v7-kpi-icon{width:40px;height:40px;border-radius:50%;display:grid;place-items:center;font-size:1.05rem;font-weight:700}
+.v7-kpi-icon.green{background:var(--v7-soft-green);color:var(--success)}
+.v7-kpi-icon.red{background:var(--v7-soft-red);color:var(--danger)}
+.v7-kpi-icon.blue{background:var(--v7-soft-blue);color:var(--accent)}
+.v7-kpi-icon.purple{background:var(--v7-soft-purple);color:var(--v7-purple)}
+.v7-kpi-label{font-size:.72rem;color:var(--muted);font-weight:620;margin-bottom:4px}
+.v7-kpi-value{font-size:1.32rem;font-weight:760;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.v7-kpi-meta{font-size:.69rem;color:var(--muted);margin-top:5px}.v7-kpi-meta.good{color:var(--success)}.v7-kpi-meta.bad{color:var(--danger)}
+
+.v7-main-grid{display:grid;grid-template-columns:minmax(0,1.85fr) minmax(280px,.65fr);gap:14px;margin-bottom:14px}
+.v7-chart-card{padding:20px}.v7-chart-card canvas{height:310px}
+.v7-card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:14px}
+.v7-card-head h2,.v7-section-head h2{font-size:1rem;line-height:1.2;margin:0;color:var(--text);letter-spacing:-.018em}
+.v7-card-head p,.v7-section-head p{font-size:.72rem;line-height:1.45;color:var(--muted);margin:4px 0 0}
+.v7-mini-badge{font-size:.67rem;font-weight:650;color:var(--accent);background:var(--v7-soft-blue);padding:6px 9px;border-radius:999px;white-space:nowrap}
+.v7-insight-card{background:linear-gradient(145deg,var(--v7-soft-green),var(--surface) 72%)}
+.v7-insight-icon{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb,var(--success) 12%,var(--surface));color:var(--success);font-size:1.35rem;margin-bottom:26px}
+.v7-insight-card h3{font-size:1.1rem;margin:0 0 8px;letter-spacing:-.025em}
+.v7-insight-card p{font-size:.8rem;color:var(--muted);line-height:1.52;margin:0}
+.v7-status-pill{display:inline-flex;align-items:center;gap:6px;margin-top:18px;padding:6px 10px;border-radius:999px;background:color-mix(in srgb,var(--success) 10%,var(--surface));color:var(--success);font-size:.69rem;font-weight:700}
+
+.v7-bottom-grid{display:grid;grid-template-columns:1fr 1.08fr;gap:14px;margin-bottom:14px}
+.v7-list{display:grid}
+.v7-list-row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:12px;align-items:center;padding:12px 0;border-top:1px solid var(--border)}
+.v7-list-row:first-child{border-top:0;padding-top:2px}
+.v7-list-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);color:var(--text);font-size:.92rem}
+.v7-list-main strong{display:block;font-size:.82rem;font-weight:660}.v7-list-main span{display:block;font-size:.68rem;color:var(--muted);margin-top:2px}
+.v7-list-amount{font-size:.78rem;font-weight:690;font-variant-numeric:tabular-nums;white-space:nowrap}.v7-list-amount.positive{color:var(--success)}
+
+.v7-details,.v7-inline-help{border:0;margin-top:12px}
+.v7-details>summary,.v7-inline-help>summary{list-style:none;cursor:pointer;color:var(--muted);font-size:.74rem;font-weight:650;padding:10px 2px}
+.v7-details>summary::-webkit-details-marker,.v7-inline-help>summary::-webkit-details-marker{display:none}
+.v7-details>summary:before,.v7-inline-help>summary:before{content:"＋";display:inline-block;width:20px;color:var(--accent)}
+.v7-details[open]>summary:before,.v7-inline-help[open]>summary:before{content:"−"}
+.v7-details-body{padding-top:8px}.v7-inline-help .note{margin:4px 0 0}
+.v7-legacy-hidden{display:none!important}
+
+/* Presupuesto */
+#view-plan .v7-page-head{margin-bottom:12px}
+.v7-plan-toolbar{
+  display:flex;align-items:end;gap:8px;padding:7px;background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;margin-bottom:12px
+}
+#view-plan .period-filter{gap:6px}
+#view-plan .period-filter>div:first-child select{font-weight:680;color:var(--accent)}
+.plan-quarter-summary{gap:10px;margin-top:14px;margin-bottom:14px}
+.plan-quarter-summary .summary-box{border-radius:11px;padding:16px 17px}
+.plan-quarter-summary .summary-label{font-size:.67rem;text-transform:none;letter-spacing:0;font-weight:620}
+.plan-quarter-summary .summary-value{font-size:1.28rem;letter-spacing:-.025em}
+.plan-months{gap:12px}
+.plan-month{border-radius:14px}
+.plan-month-header{padding:18px 20px;background:var(--surface)}
+.plan-month-title h2{font-size:1.22rem}
+.plan-month-sub{font-size:.72rem}
+.plan-month-body{padding:0 18px 18px}
+.month-kpis{gap:8px;margin:14px 0}
+.month-kpi{border-radius:9px;padding:11px 12px}
+.fortnight-grid{gap:10px}
+.fortnight-card{border-radius:11px}
+.fortnight-head{border-left:0;background:var(--surface);padding:13px 14px}
+.fortnight-meta{background:var(--surface-2);border-radius:0;padding:10px 13px}
+.category-budget-heading{background:transparent;padding:13px 13px 7px;border-bottom:0;font-size:.66rem}
+.fortnight-table th{background:transparent}
+.fortnight-total{background:var(--surface);padding:9px 13px}
+.plan-month-toggle{border-radius:8px!important}
+
+/* Movimientos */
+.v7-composer{margin-bottom:14px}
+.v7-icon-button{width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--muted);font-size:1.25rem}
+.v7-icon-button:hover{background:var(--surface-hover);color:var(--text)}
+.v7-filterbar{
+  display:grid;grid-template-columns:minmax(240px,1.5fr) 115px minmax(150px,.8fr) 135px 150px auto;
+  gap:8px;align-items:end;margin-bottom:12px
+}
+.v7-filterbar label{display:block;font-size:.65rem;color:var(--muted);font-weight:620;margin-bottom:4px}
+.v7-search{height:38px;display:flex;align-items:center;gap:8px;padding:0 11px;border:1px solid var(--border);border-radius:9px;background:var(--surface)}
+.v7-search span{color:var(--muted);font-size:1.1rem}.v7-search input{border:0!important;outline:0!important;padding:0;min-height:0;background:transparent}
+.v7-movement-layout{display:grid;grid-template-columns:minmax(0,1.8fr) minmax(270px,.62fr);gap:14px}
+.v7-feed-card{padding:18px 20px}
+.v7-transaction-feed{display:grid}
+.v7-feed-group{padding-top:4px}
+.v7-feed-date{display:flex;gap:8px;align-items:baseline;padding:12px 0 7px;border-top:1px solid var(--border)}
+.v7-feed-group:first-child .v7-feed-date{border-top:0;padding-top:0}
+.v7-feed-date strong{font-size:.8rem}.v7-feed-date span{font-size:.67rem;color:var(--muted)}
+.v7-transaction-row{display:grid;grid-template-columns:38px minmax(0,1.2fr) minmax(110px,.6fr) auto 30px;gap:11px;align-items:center;padding:10px 0;border-top:1px solid color-mix(in srgb,var(--border) 82%,transparent)}
+.v7-transaction-row:first-of-type{border-top:0}
+.v7-transaction-icon{width:34px;height:34px;border-radius:50%;display:grid;place-items:center;background:var(--surface-2);font-size:.9rem}
+.v7-transaction-main strong{display:block;font-size:.8rem}.v7-transaction-main span{display:block;font-size:.66rem;color:var(--muted);margin-top:2px}
+.v7-category-chip{justify-self:start;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border-radius:999px;padding:4px 9px;font-size:.65rem;font-weight:650;background:var(--surface-2);color:var(--muted)}
+.v7-transaction-amount{font-size:.78rem;font-weight:710;white-space:nowrap;text-align:right;font-variant-numeric:tabular-nums}
+.v7-transaction-amount.income{color:var(--success)}
+.v7-row-menu{width:28px;height:28px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:1rem}.v7-row-menu:hover{background:var(--surface-hover);color:var(--danger)}
+.v7-stack{display:grid;align-content:start;gap:14px}
+.v7-donut-placeholder{width:118px;height:118px;margin:6px auto 12px;border-radius:50%;background:conic-gradient(var(--accent) 0 var(--v7-pct,35%),color-mix(in srgb,var(--accent) 18%,var(--surface)) var(--v7-pct,35%) 100%);display:grid;place-items:center}
+.v7-donut-placeholder:after{content:"";width:72px;height:72px;border-radius:50%;background:var(--surface);position:absolute}
+.v7-donut-placeholder{position:relative}.v7-donut-center{position:relative;z-index:1;text-align:center}.v7-donut-center strong{display:block;font-size:.9rem}.v7-donut-center span{font-size:.62rem;color:var(--muted)}
+.v7-mini-bars{display:grid;gap:8px}.v7-mini-bar{display:grid;grid-template-columns:minmax(0,1fr) 56px;gap:8px;align-items:center;font-size:.68rem}.v7-mini-bar-track{height:5px;border-radius:999px;background:var(--surface-hover);overflow:hidden}.v7-mini-bar-track span{display:block;height:100%;background:var(--accent);border-radius:inherit}
+.v7-shortcuts{display:grid}.v7-shortcuts button{display:flex;align-items:center;justify-content:space-between;border:0;border-top:1px solid var(--border);background:transparent;color:var(--text);padding:11px 0;font-size:.75rem;text-align:left}.v7-shortcuts button:first-child{border-top:0}.v7-shortcuts button span{color:var(--muted)}
+
+/* Deudas */
+.v7-debt-grid{grid-template-columns:minmax(0,1.7fr) minmax(300px,.7fr)}
+.v7-debt-progress{display:grid;gap:14px}
+.v7-debt-progress-row{display:grid;grid-template-columns:minmax(120px,.75fr) minmax(180px,1.5fr) 84px;gap:12px;align-items:center}
+.v7-debt-progress-row .name{font-size:.73rem;font-weight:660;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.v7-debt-track{height:10px;border-radius:999px;background:var(--surface-hover);overflow:hidden}.v7-debt-track span{display:block;height:100%;border-radius:inherit;background:var(--accent)}
+.v7-debt-progress-row .pct{text-align:right;font-size:.68rem;color:var(--muted)}
+.v7-section-head{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:22px 2px 10px}
+.v7-section-head>div:last-child{min-width:180px}.v7-section-head label{display:block;font-size:.64rem;color:var(--muted);margin-bottom:4px}
+.v7-debt-list{display:grid;gap:8px}
+.v7-debt-card{display:grid;grid-template-columns:minmax(180px,1.05fr) minmax(150px,.8fr) minmax(190px,1fr) 120px 130px auto;gap:14px;align-items:center;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px}
+.v7-debt-card.archived{opacity:.62}
+.v7-debt-name{display:flex;align-items:center;gap:10px;min-width:0}.v7-debt-name .icon{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;background:var(--v7-soft-blue);color:var(--accent)}
+.v7-debt-name strong{display:block;font-size:.82rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.v7-debt-name span,.v7-debt-cell span{display:block;font-size:.64rem;color:var(--muted);margin-top:2px}
+.v7-debt-cell strong{font-size:.78rem;font-weight:680}.v7-debt-card .progress{margin-top:5px;height:6px}
+.v7-debt-actions{display:flex;justify-content:flex-end;gap:6px;flex-wrap:wrap}.v7-debt-actions .btn{white-space:nowrap}
+
+/* Reports: same intelligence, calmer visual hierarchy */
+#view-reports .report-studio-head{margin:0 0 18px;padding-right:210px}
+#view-reports .report-shell{gap:14px}
+#view-reports .report-tabs{order:-2;border:1px solid var(--border);border-radius:12px;padding:4px;background:var(--surface);gap:4px}
+#view-reports .report-tab{flex:1;border-radius:8px;padding:9px 12px}
+#view-reports .report-tab.active{background:var(--v7-soft-blue);color:var(--accent)}
+#view-reports .report-tab.active:after{display:none}
+#view-reports .report-commandbar{order:-1;position:relative;top:auto;border-radius:12px;box-shadow:none;background:var(--surface)}
+#view-reports .report-executive{grid-template-columns:1fr}
+#view-reports .report-hero{min-height:145px;padding:24px 26px;background:var(--surface);border-color:var(--border);border-radius:14px}
+#view-reports .report-hero:after{display:none}
+#view-reports .report-hero-value{font-size:3rem}
+#view-reports .report-signal-stack{grid-template-columns:repeat(4,minmax(0,1fr))}
+#view-reports .report-signal.wide{grid-column:auto}
+#view-reports .report-kpis{grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+#view-reports .report-kpi,#view-reports .report-chart-card,#view-reports .report-card{border-radius:12px}
+#view-reports .report-main-grid{grid-template-columns:minmax(0,1.9fr) minmax(280px,.65fr)}
+#view-reports .report-chart-card.featured canvas{height:330px}
+
+/* Generic buttons / inputs tuned for v7 */
+.btn{border-radius:9px;padding:8px 12px;font-weight:680}
+.btn:not(.secondary):not(.danger){background:var(--accent)}
+.btn.secondary{background:var(--surface)}
+input,select,textarea{border-radius:8px;min-height:38px}
+.card{border-radius:12px}
+.note{border-radius:10px}
+
+/* Dark mode */
+html[data-theme="dark"] .v7-card,
+html[data-theme="dark"] .v7-hero-card,
+html[data-theme="dark"] .v7-kpi,
+html[data-theme="dark"] .v7-debt-card{box-shadow:none}
+html[data-theme="dark"] .v7-insight-card{background:linear-gradient(145deg,color-mix(in srgb,var(--success) 10%,var(--surface)),var(--surface) 72%)}
+
+/* Responsive */
+@media(max-width:1180px){
+  .v7-page-head,#view-reports .report-studio-head{padding-right:0}
+  .v7-filterbar{grid-template-columns:minmax(220px,1fr) repeat(2,minmax(120px,.55fr));}
+  .v7-filterbar>div:nth-of-type(4),.v7-filterbar>div:nth-of-type(5),.v7-filterbar>button{grid-row:2}
+  .v7-debt-card{grid-template-columns:1.2fr .8fr 1fr 110px}.v7-debt-card>.v7-debt-cell:nth-child(5){display:none}
+}
+@media(max-width:1050px){
+  header{width:auto}.nav-icon{display:none}
+  main{margin-left:0}
+  .v7-main-grid,.v7-movement-layout,.v7-debt-grid{grid-template-columns:1fr}
+  .v7-bottom-grid{grid-template-columns:1fr}
+  #view-reports .report-signal-stack{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #view-reports .report-main-grid{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+  .v7-page-head{display:block;margin-bottom:18px}.v7-page-head h1,.report-studio-head h1{font-size:2.15rem}.v7-page-actions{margin-top:12px}
+  .v7-hero-card{grid-template-columns:1fr;padding:21px}.v7-hero-note{border-left:0;border-top:1px solid var(--border);padding:20px 0 0;min-height:0}
+  .v7-kpis{grid-template-columns:1fr 1fr}
+  .v7-filterbar{grid-template-columns:1fr 1fr}.v7-search{grid-column:1/-1}.v7-filterbar>button{grid-column:1/-1}
+  .v7-transaction-row{grid-template-columns:36px minmax(0,1fr) auto 28px}.v7-category-chip{display:none}
+  .v7-debt-card{grid-template-columns:1fr 1fr}.v7-debt-actions{grid-column:1/-1;justify-content:flex-start}
+  .v7-debt-card>.v7-debt-cell:nth-child(4),.v7-debt-card>.v7-debt-cell:nth-child(5){display:block}
+  #view-reports .report-kpis,#view-reports .report-signal-stack{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .v7-kpis{grid-template-columns:1fr}
+  .v7-filterbar{grid-template-columns:1fr}.v7-search,.v7-filterbar>button{grid-column:auto}
+  .v7-debt-card{grid-template-columns:1fr}
+  #view-reports .report-kpis,#view-reports .report-signal-stack{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
@@ -506,17 +756,14 @@ html[data-theme="dark"] #view-capital select{color-scheme:dark}
   <div class="topbar">
     <div class="brand" aria-label="Rastro">
       <img class="brand-logo" src="data:image/png;base64,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" alt="Rastro">
-      <small class="brand-version">v6.6.1</small>
+      <small class="brand-version">v7.0</small>
     </div>
     <nav id="nav">
-      <button data-view="dashboard" class="active">Inicio</button>
-      <button data-view="plan">Presupuesto</button>
-      <button data-view="movements">Movimientos</button>
-      <button data-view="debts">Deudas</button>
-      <button data-view="shared">Por cobrar</button>
-      <button data-view="capital">Capital y metas</button>
-      <button data-view="reports">Reportes</button>
-      <button data-view="categories">Categorías</button>
+      <button data-view="dashboard" class="active"><span class="nav-icon" aria-hidden="true">⌂</span><span>Inicio</span></button>
+      <button data-view="plan"><span class="nav-icon" aria-hidden="true">◔</span><span>Presupuesto</span></button>
+      <button data-view="movements"><span class="nav-icon" aria-hidden="true">≡</span><span>Movimientos</span></button>
+      <button data-view="debts"><span class="nav-icon" aria-hidden="true">▭</span><span>Deudas</span></button>
+      <button data-view="reports"><span class="nav-icon" aria-hidden="true">▥</span><span>Reportes</span></button>
     </nav>
 
   </div>
@@ -540,58 +787,97 @@ html[data-theme="dark"] #view-capital select{color-scheme:dark}
 
 <main>
   <section class="view active" id="view-dashboard">
-    <h1>Resumen financiero</h1>
-    <p class="sub">Flujo operativo separado del capital protegido y de los fondos reservados.</p>
-    <div class="toolbar">
-      <div class="period-filter" id="dashboardFilters">
-        <div><label>Vista</label>
-          <select id="dashboardLevel">
-            <option value="quarter" selected>Trimestre</option>
-            <option value="month">Mes</option>
-            <option value="fortnight">Quincena</option>
-          </select>
-        </div>
-        <div id="dashboardQuarterWrap"><label>Trimestre</label><select id="dashboardQuarter"></select></div>
-        <div id="dashboardMonthWrap" class="month-select" hidden><label>Mes</label><select id="dashboardMonth"></select></div>
-        <div id="dashboardFortnightWrap" hidden><label>Quincena</label><select id="dashboardFortnight"><option value="1">Quincena 1</option><option value="2">Quincena 2</option></select></div>
+    <div class="v7-page-head">
+      <div>
+        <div class="v7-eyebrow">INICIO</div>
+        <h1>Tu panorama financiero</h1>
+        <p class="sub">Comprendé tu flujo de dinero y tomá mejores decisiones para lo que viene.</p>
       </div>
-      <button class="btn" id="reconcileBtn">Actualizar saldo real</button>
-      <button class="btn secondary" id="printBtn">Imprimir / PDF</button>
+      <div class="v7-page-actions">
+        <button class="btn secondary" id="reconcileBtn">Actualizar saldo real</button>
+        <button class="btn secondary" id="printBtn">Imprimir / PDF</button>
+      </div>
     </div>
-    <div class="grid kpis" id="kpiGrid"></div>
-    <div class="card reconcile" id="reconcileStatus" style="margin-top:16px"></div>
-    <div class="grid charts">
-      <div class="card">
-        <div class="chart-card-title">
-          <strong>Egresos: presupuesto vs. real</strong>
-          <div class="chart-legend" aria-label="Leyenda del gráfico de egresos">
-            <span class="chart-legend-item"><span class="legend-box legend-budget"></span>Presupuesto</span>
-            <span class="chart-legend-item"><span class="legend-box legend-actual-expense"></span>Real</span>
+
+    <div class="v7-hero-card" id="dashboardHero">
+      <div class="v7-hero-main">
+        <div class="v7-kicker">Liquidez disponible</div>
+        <div class="v7-hero-value" id="dashboardHeroValue">—</div>
+        <div class="v7-hero-delta" id="dashboardHeroDelta">—</div>
+      </div>
+      <div class="v7-hero-note" id="dashboardHeroNote"></div>
+    </div>
+
+    <div class="v7-kpis" id="kpiGrid"></div>
+
+    <div class="v7-main-grid">
+      <div class="v7-card v7-chart-card">
+        <div class="v7-card-head">
+          <div>
+            <h2>Evolución de tu liquidez</h2>
+            <p id="dashboardChartMeta">Últimos meses</p>
+          </div>
+          <div class="v7-mini-badge">6 meses</div>
+        </div>
+        <canvas id="cashChart" aria-label="Evolución de la liquidez"></canvas>
+      </div>
+      <div class="v7-card v7-insight-card" id="dashboardInsight"></div>
+    </div>
+
+    <div class="v7-bottom-grid">
+      <div class="v7-card">
+        <div class="v7-card-head">
+          <div><h2>Próximos compromisos</h2><p>Lo que necesita tu atención primero.</p></div>
+        </div>
+        <div class="v7-list" id="dashboardCommitments"></div>
+      </div>
+      <div class="v7-card">
+        <div class="v7-card-head">
+          <div><h2>Actividad reciente</h2><p>Tus últimos movimientos registrados.</p></div>
+        </div>
+        <div class="v7-list" id="dashboardActivity"></div>
+      </div>
+    </div>
+
+    <details class="v7-details">
+      <summary>Ver análisis y controles avanzados</summary>
+      <div class="v7-details-body">
+        <div class="toolbar">
+          <div class="period-filter" id="dashboardFilters">
+            <div><label>Vista</label>
+              <select id="dashboardLevel">
+                <option value="quarter" selected>Trimestre</option>
+                <option value="month">Mes</option>
+                <option value="fortnight">Quincena</option>
+              </select>
+            </div>
+            <div id="dashboardQuarterWrap"><label>Trimestre</label><select id="dashboardQuarter"></select></div>
+            <div id="dashboardMonthWrap" class="month-select" hidden><label>Mes</label><select id="dashboardMonth"></select></div>
+            <div id="dashboardFortnightWrap" hidden><label>Quincena</label><select id="dashboardFortnight"><option value="1">Quincena 1</option><option value="2">Quincena 2</option></select></div>
           </div>
         </div>
-        <canvas id="expenseChart" aria-label="Gráfico de egresos presupuestados y reales"></canvas>
-      </div>
-      <div class="card">
-        <div class="chart-card-title">
-          <strong>Flujo de caja</strong>
-          <div class="chart-legend" aria-label="Leyenda del gráfico de flujo de caja">
-            <span class="chart-legend-item"><span class="legend-line legend-projected"></span>Saldo proyectado</span>
-            <span class="chart-legend-item"><span class="legend-line dashed legend-actual-balance"></span>Saldo real</span>
-          </div>
+        <div class="card reconcile" id="reconcileStatus"></div>
+        <div class="v7-card" style="margin-top:14px">
+          <div class="v7-card-head"><div><h2>Presupuesto vs. real</h2><p>Comparación de egresos del periodo seleccionado.</p></div></div>
+          <canvas id="expenseChart" aria-label="Gráfico de egresos presupuestados y reales"></canvas>
         </div>
-        <canvas id="cashChart" aria-label="Gráfico de saldo proyectado y saldo real"></canvas>
+        <div class="v7-card" style="margin-top:14px">
+          <div class="v7-card-head"><div><h2>Estado por categoría</h2><p>Detalle operativo del periodo.</p></div></div>
+          <div class="table-wrap" id="dashboardCategories"></div>
+        </div>
       </div>
-    </div>
-    <div class="card" style="margin-top:16px">
-      <strong>Estado por categoría</strong>
-      <div class="table-wrap" id="dashboardCategories"></div>
-    </div>
+    </details>
   </section>
 
   <section class="view" id="view-plan">
-    <h1 id="planTitle">Presupuesto</h1>
-    <p class="sub" id="planSub">Consulta y edita tu presupuesto por trimestre, mes o quincena sin perder la estructura de proyección.</p>
-    <div class="toolbar">
+    <div class="v7-page-head">
+      <div>
+        <div class="v7-eyebrow">PRESUPUESTO</div>
+        <h1 id="planTitle">Presupuesto</h1>
+        <p class="sub" id="planSub">Tu plan de lo que entra, lo que sale y lo que te queda.</p>
+      </div>
+    </div>
+    <div class="toolbar v7-plan-toolbar">
       <div class="period-filter" id="planFilters">
         <div><label>Vista</label>
           <select id="planLevel">
@@ -609,19 +895,36 @@ html[data-theme="dark"] #view-capital select{color-scheme:dark}
       <button class="btn secondary" id="expandPlanBtn" type="button">Ver todo</button>
       <button class="btn secondary" id="collapsePlanBtn" type="button">Compactar</button>
     </div>
-    <div class="note"><strong>Regla de lectura:</strong> pago del 28 = 1.ª quincena del mes siguiente; pago del 14 = 2.ª quincena del mes actual. <strong>Proyección adaptativa:</strong> al conciliar tu saldo real, ese monto se vuelve el nuevo punto de partida y se arrastra hacia las quincenas futuras.</div>
+    <details class="v7-inline-help">
+      <summary>Cómo interpreta Rastro tus quincenas</summary>
+      <div class="note"><strong>Regla de lectura:</strong> pago del 28 = 1.ª quincena del mes siguiente; pago del 14 = 2.ª quincena del mes actual. <strong>Proyección adaptativa:</strong> al conciliar tu saldo real, ese monto se vuelve el nuevo punto de partida y se arrastra hacia las quincenas futuras.</div>
+    </details>
     <div id="planQuarterSummary" class="plan-quarter-summary"></div>
     <div id="planMonths" class="plan-months"></div>
-    <div class="card" style="margin-top:18px">
-      <div class="table-head" style="padding:0 0 12px;border-bottom:1px solid var(--border)"><strong id="planClosingTitle">Cierre del periodo</strong><span class="pill" id="planSummary"></span></div>
-      <div id="planClosing" class="month-kpis" style="margin:14px 0 0"></div>
+    <div class="v7-legacy-hidden" aria-hidden="true">
+      <strong id="planClosingTitle">Cierre del periodo</strong>
+      <span id="planSummary"></span>
+      <div id="planClosing"></div>
     </div>
   </section>
 
   <section class="view" id="view-movements">
-    <h1>Movimientos reales</h1>
-    <p class="sub">Registra ingresos, gastos y pagos de deuda. Esto alimenta automáticamente los reportes.</p>
-    <div class="card" style="margin-bottom:16px">
+    <div class="v7-page-head">
+      <div>
+        <div class="v7-eyebrow">MOVIMIENTOS</div>
+        <h1>Movimientos</h1>
+        <p class="sub">Revisá todos tus ingresos y gastos reales en un solo lugar.</p>
+      </div>
+      <div class="v7-page-actions">
+        <button class="btn" id="toggleMovementComposer" type="button">＋ Agregar movimiento</button>
+      </div>
+    </div>
+
+    <div class="v7-card v7-composer" id="movementComposer" hidden>
+      <div class="v7-card-head">
+        <div><h2>Nuevo movimiento</h2><p>Registralo una vez y Rastro actualiza el resto.</p></div>
+        <button class="v7-icon-button" id="closeMovementComposer" type="button" aria-label="Cerrar">×</button>
+      </div>
       <form id="movementForm" class="form-grid">
         <div class="field"><label>Fecha</label><input type="date" id="mDate" required></div>
         <div class="field"><label>Tipo</label><select id="mType" required></select></div>
@@ -633,36 +936,79 @@ html[data-theme="dark"] #view-capital select{color-scheme:dark}
         <div class="form-actions"><button class="btn" type="submit">Registrar</button></div>
       </form>
     </div>
-    <div class="toolbar">
-      <div><label>Vista</label>
-        <select id="movementLevel">
-          <option value="fortnight">Quincena</option>
-          <option value="month">Mes</option>
-          <option value="quarter" selected>Trimestre</option>
-        </select>
-      </div>
+
+    <div class="v7-filterbar">
+      <div class="v7-search"><span aria-hidden="true">⌕</span><input id="movementSearch" placeholder="Buscar por comercio, categoría o nota..."></div>
+      <div><label>Vista</label><select id="movementLevel"><option value="fortnight">Quincena</option><option value="month">Mes</option><option value="quarter" selected>Trimestre</option></select></div>
       <div><label>Periodo</label><select id="movementPeriod"></select></div>
       <div><label>Tipo</label><select id="movementTypeFilter"><option value="">Todos</option></select></div>
+      <div><label>Categoría</label><select id="movementCategoryFilter"><option value="">Todas</option></select></div>
       <button class="btn secondary" id="exportMovementsCsv">Exportar CSV</button>
     </div>
-    <div class="card table-card">
-      <div class="table-head"><strong>Historial</strong><span class="pill" id="movementCount"></span></div>
-      <div class="table-wrap"><table id="movementTable"></table></div>
+
+    <div class="v7-kpis" id="movementSummary"></div>
+
+    <div class="v7-movement-layout">
+      <div class="v7-card v7-feed-card">
+        <div class="v7-card-head">
+          <div><h2>Historial</h2><p id="movementCount"></p></div>
+        </div>
+        <div class="v7-transaction-feed" id="movementFeed"></div>
+      </div>
+      <aside class="v7-stack">
+        <div class="v7-card" id="movementQuick"></div>
+        <div class="v7-card">
+          <div class="v7-card-head"><div><h2>Atajos</h2><p>Vistas que usás con frecuencia.</p></div></div>
+          <div class="v7-shortcuts">
+            <button type="button" data-v7-movement-type="Gasto">Solo gastos <span>→</span></button>
+            <button type="button" data-v7-movement-type="Ingreso">Solo ingresos <span>→</span></button>
+            <button type="button" data-v7-movement-type="Pago deuda">Pagos de deuda <span>→</span></button>
+            <button type="button" data-v7-movement-type="">Todos los movimientos <span>→</span></button>
+          </div>
+        </div>
+      </aside>
     </div>
   </section>
 
   <section class="view" id="view-debts">
-    <h1>Control de deudas</h1>
-    <p class="sub">Tarjetas, préstamo y deuda familiar. Los pagos registrados reducen el saldo estimado.</p>
-    <div class="note"><strong>Pagado registrado</strong> suma únicamente los movimientos creados con tipo <em>Pago deuda</em> y vinculados a esa deuda. Usa el botón “Registrar pago” de cada fila para que el vínculo quede correcto. El saldo restante es una estimación: actualiza el saldo base cuando entren intereses o cargos nuevos.</div>
-    <div class="toolbar">
-      <button class="btn" id="addDebtBtn">Agregar deuda</button>
+    <div class="v7-page-head">
+      <div>
+        <div class="v7-eyebrow">DEUDAS</div>
+        <h1>Deudas</h1>
+        <p class="sub">Llevá el control de tus tarjetas, préstamos y el progreso para pagarlas.</p>
+      </div>
+      <div class="v7-page-actions"><button class="btn" id="addDebtBtn">＋ Agregar deuda</button></div>
+    </div>
+
+    <div class="v7-hero-card v7-debt-hero" id="debtHero">
+      <div class="v7-hero-main">
+        <div class="v7-kicker">Saldo total pendiente</div>
+        <div class="v7-hero-value" id="debtHeroValue">—</div>
+        <div class="v7-hero-delta" id="debtHeroDelta">—</div>
+      </div>
+      <div class="v7-hero-note" id="debtHeroNote"></div>
+    </div>
+
+    <div class="v7-kpis" id="debtKpis"></div>
+
+    <div class="v7-main-grid v7-debt-grid">
+      <div class="v7-card">
+        <div class="v7-card-head"><div><h2>Avance de pago</h2><p>Qué parte de cada deuda ya has cubierto.</p></div></div>
+        <div class="v7-debt-progress" id="debtProgress"></div>
+      </div>
+      <div class="v7-card v7-insight-card" id="debtStrategy"></div>
+    </div>
+
+    <div class="v7-section-head">
+      <div><h2>Tus deudas</h2><p id="debtTotal"></p></div>
       <div><label>Mostrar</label><select id="debtStatusFilter"><option value="active">Deudas activas</option><option value="archived">Archivadas / pagadas</option><option value="all">Todas</option></select></div>
     </div>
-    <div class="card table-card">
-      <div class="table-head"><strong>Inventario</strong><span class="pill" id="debtTotal"></span></div>
-      <div class="table-wrap"><table id="debtTable"></table></div>
-    </div>
+    <div class="v7-debt-list" id="debtList"></div>
+
+    <details class="v7-inline-help">
+      <summary>Cómo calcula Rastro el saldo restante</summary>
+      <div class="note"><strong>Pagado registrado</strong> suma únicamente los movimientos creados con tipo <em>Pago deuda</em> y vinculados a esa deuda. El saldo restante es una estimación: actualizá el saldo base cuando entren intereses o cargos nuevos.</div>
+    </details>
   </section>
 
   <section class="view" id="view-shared">
@@ -744,9 +1090,9 @@ html[data-theme="dark"] #view-capital select{color-scheme:dark}
   <section class="view" id="view-reports">
     <div class="report-studio-head">
       <div>
-        <div class="report-eyebrow">Rastro Report Studio</div>
+        <div class="report-eyebrow">RASTRO REPORT STUDIO</div>
         <h1>Inteligencia financiera</h1>
-        <p class="sub">Una lectura continua de tu pasado, tu posición de hoy y la liquidez que estás construyendo. Todo nace de tu presupuesto, movimientos, conciliaciones, deudas y capital.</p>
+        <p class="sub">Comprendé tu desempeño pasado, tu posición actual y proyectá tu futuro.</p>
       </div>
     </div>
 
@@ -887,7 +1233,7 @@ html[data-theme="dark"] #view-capital select{color-scheme:dark}
     </div>
   </section>
 </main>
-<footer>Rastro v6.6.1 · Report Studio · Pasado, presente y proyección · CRC/USD · Datos locales · No envía información a ningún servidor.</footer>
+<footer>Rastro v7.0 · Simple por fuera, poderoso por dentro · CRC/USD · Datos locales · No envía información a ningún servidor.</footer>
 </div>
 
 <dialog id="sharedGroupDialog">
@@ -3158,7 +3504,269 @@ function initUiPreferences(){
  document.querySelectorAll('.dialog-close').forEach(b=>b.addEventListener('click',()=>b.closest('dialog')?.close()));
  applyTheme();
 }
-bind();bindReportStudio();renderDashboard();updateCurrencyHeader();initUiPreferences();setTimeout(()=>{if(needsDailyFx())openFxDialog(true)},80);
+
+// ==========================================================
+// Rastro v7 · Minimal UI renderers
+// Conservan el mismo STORAGE_KEY y el mismo modelo de datos.
+// ==========================================================
+function v7IsoDateOffset(days){
+  const d=new Date(todayIso()+"T00:00:00Z");d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)
+}
+function v7MonthKey(date){return String(date||"").slice(0,7)}
+function v7SignedMoney(value){return `${value>=0?"+":"−"}${money(Math.abs(value))}`}
+function v7Kpi(icon,tone,label,value,meta="",metaTone=""){
+  return `<div class="v7-kpi"><div class="v7-kpi-icon ${tone}">${icon}</div><div><div class="v7-kpi-label">${label}</div><div class="v7-kpi-value">${value}</div>${meta?`<div class="v7-kpi-meta ${metaTone}">${meta}</div>`:""}</div></div>`
+}
+function v7NextPayDate(d){
+  let day=parseInt(String(d?.payDay||"").match(/\d+/)?.[0]||"",10);if(!day||day<1)return "";
+  const now=new Date(todayIso()+"T00:00:00Z");
+  const make=(y,m)=>{const last=new Date(Date.UTC(y,m+1,0)).getUTCDate();return new Date(Date.UTC(y,m,Math.min(day,last)))};
+  let candidate=make(now.getUTCFullYear(),now.getUTCMonth());
+  if(candidate<now)candidate=make(now.getUTCFullYear(),now.getUTCMonth()+1);
+  return candidate.toISOString().slice(0,10)
+}
+function v7DaysUntil(date){
+  if(!date)return null;const a=new Date(todayIso()+"T00:00:00Z"),b=new Date(date+"T00:00:00Z");return Math.round((b-a)/86400000)
+}
+function v7DateGroupLabel(date){
+  const diff=v7DaysUntil(date);
+  if(diff===0)return "Hoy";
+  if(diff===-1)return "Ayer";
+  if(diff!==null&&diff<0&&diff>=-7)return "Esta semana";
+  return dateLabel(date)
+}
+function v7MovementIcon(m){
+  if(m.type==="Ingreso")return "↗";
+  if(m.type==="Pago deuda")return "▭";
+  if(m.type==="Movimiento patrimonial")return "◇";
+  return "↘"
+}
+function v7SafeText(v){return safe(String(v||""))}
+
+const renderDashboardLegacy=renderDashboard;
+renderDashboard=function(){
+  const {level,value}=hierarchicalSelection("dashboard");
+  const summary=selectedSummary(level,value);
+  const operating=actualBalanceAt(todayIso());
+  const previous=actualBalanceAt(v7IsoDateOffset(-30));
+  const delta=operating-previous;
+  const reserves=reserveTotals(todayIso());
+  const periodMovs=selectedMovements(level,value);
+  const realIncome=periodMovs.filter(m=>m.type==="Ingreso").reduce((s,m)=>s+movementAmountCRC(m),0);
+  const realExpenses=periodMovs.filter(m=>m.type==="Gasto").reduce((s,m)=>s+movementAmountCRC(m),0);
+  const debtPaid=periodMovs.filter(m=>m.type==="Pago deuda").reduce((s,m)=>s+movementAmountCRC(m),0);
+  const operatingFlow=realIncome-realExpenses-debtPaid;
+
+  document.getElementById("dashboardHeroValue").textContent=money(operating);
+  const deltaEl=document.getElementById("dashboardHeroDelta");
+  if(previous!==0){
+    const pct=Math.abs(delta/previous)*100;
+    deltaEl.textContent=`${delta>=0?"↑":"↓"} ${pct.toFixed(0)}% respecto a hace 30 días`;
+    deltaEl.className=`v7-hero-delta ${delta>=0?"good":"bad"}`;
+  }else{
+    deltaEl.textContent="Tu punto de partida para las próximas decisiones";
+    deltaEl.className="v7-hero-delta";
+  }
+  document.getElementById("dashboardHeroNote").innerHTML=operating>=0
+    ? `<strong>Tenés una posición operativa ${operatingFlow>=0?"estable":"que conviene vigilar"}.</strong><span>${operatingFlow>=0?`El periodo seleccionado deja un flujo real positivo de ${money(operatingFlow)}.`:`El periodo seleccionado está consumiendo ${money(Math.abs(operatingFlow))} de liquidez neta.`}</span>`
+    : `<strong>Tu liquidez operativa está en negativo.</strong><span>Conviene revisar el siguiente pago, el gasto variable y cualquier ingreso pendiente antes de asumir nuevos compromisos.</span>`;
+
+  document.getElementById("kpiGrid").innerHTML=[
+    v7Kpi("↑","green","Ingresos del periodo",money(realIncome||summary.plannedIncome),realIncome?"Registrados":"Según presupuesto",realIncome?"good":""),
+    v7Kpi("↓","red","Gastos del periodo",money(realExpenses||summary.realExpense),realExpenses?"Registrados":"Sin movimientos",""),
+    v7Kpi("▭","purple","Pagos de deuda",money(debtPaid),`${periodMovs.filter(m=>m.type==="Pago deuda").length} movimientos`,""),
+    v7Kpi("◇","blue","Ahorro / capital",money(reserves.total),`${reserves.goalTotal>0?money(reserves.goalTotal)+" en metas":"Sin metas registradas"}`,"")
+  ].join("");
+
+  const hist=(typeof reportMonthlySeries==="function"?reportMonthlySeries():[]).filter(r=>r.month<=todayIso().slice(0,7)).slice(-6);
+  const labels=hist.map(r=>reportShortMonth(r.month));
+  const balances=hist.map(r=>r.closing);
+  if(labels.length&&typeof drawReportLine==="function")drawReportLine(document.getElementById("cashChart"),labels,[{values:balances,color:"#2383e2",fill:true}]);
+  else drawLineChart(document.getElementById("cashChart"),["Hoy"],[operating],[operating]);
+  document.getElementById("dashboardChartMeta").textContent=labels.length?`${labels[0]} – ${labels.at(-1)}`:"Sin historial suficiente";
+
+  const usage=summary.plannedExpense?summary.realExpense/summary.plannedExpense:null;
+  const insight=document.getElementById("dashboardInsight");
+  if(usage===null){
+    insight.innerHTML=`<div class="v7-insight-icon">↗</div><h3>Tu lectura está lista para crecer</h3><p>Definí presupuesto y registrá movimientos reales para que Rastro pueda comparar ritmo, desviaciones y proyección.</p><span class="v7-status-pill">○ Faltan datos reales</span>`;
+  }else if(usage<=.85){
+    insight.innerHTML=`<div class="v7-insight-icon">▥</div><h3>Vas dentro de tu ritmo de gasto</h3><p>Has utilizado ${(usage*100).toFixed(0)}% del presupuesto de egresos del periodo seleccionado.</p><span class="v7-status-pill">✓ Todo se ve bien</span>`;
+  }else if(usage<=1){
+    insight.innerHTML=`<div class="v7-insight-icon">◔</div><h3>Estás cerca del límite planeado</h3><p>Has utilizado ${(usage*100).toFixed(0)}% del presupuesto. Vale la pena cuidar los gastos discrecionales del resto del periodo.</p><span class="v7-status-pill">○ Revisar ritmo</span>`;
+  }else{
+    insight.innerHTML=`<div class="v7-insight-icon">!</div><h3>El gasto superó el plan</h3><p>Los egresos reales están ${money(summary.realExpense-summary.plannedExpense)} por encima del presupuesto seleccionado.</p><span class="v7-status-pill">○ Requiere atención</span>`;
+  }
+
+  const debts=activeDebts().map(d=>({...d,nextDate:v7NextPayDate(d)})).filter(d=>d.nextDate).sort((a,b)=>a.nextDate.localeCompare(b.nextDate)).slice(0,3);
+  document.getElementById("dashboardCommitments").innerHTML=debts.length?debts.map(d=>{
+    const days=v7DaysUntil(d.nextDate);
+    return `<div class="v7-list-row"><div class="v7-list-icon">▭</div><div class="v7-list-main"><strong>${v7SafeText(d.name)}</strong><span>${days===0?"Hoy":days===1?"Mañana":`En ${days} días`} · ${dateLabel(d.nextDate)}</span></div><div class="v7-list-amount">${money(debtMinimumCRC(d))}</div></div>`
+  }).join(""):`<div class="empty">No hay vencimientos de deuda con fecha configurada.</div>`;
+
+  const recent=[...(data.movements||[])].sort((a,b)=>String(b.date).localeCompare(String(a.date))||num(b.seq)-num(a.seq)).slice(0,4);
+  document.getElementById("dashboardActivity").innerHTML=recent.length?recent.map(m=>{
+    const amt=movementAmountCRC(m),positive=m.type==="Ingreso";
+    return `<div class="v7-list-row"><div class="v7-list-icon">${v7MovementIcon(m)}</div><div class="v7-list-main"><strong>${v7SafeText(m.description||movementCategoryName(m)||m.type)}</strong><span>${v7SafeText(movementCategoryName(m))} · ${dateLabel(m.date)}</span></div><div class="v7-list-amount ${positive?"positive":""}">${positive?"+":"−"} ${money(amt)}</div></div>`
+  }).join(""):`<div class="empty">Todavía no hay actividad registrada.</div>`;
+
+  renderReconciliationStatus();
+  const cat=categoryReportFiltered(level,value),rows=summary.rows;
+  document.getElementById("dashboardCategories").innerHTML=categoryTable(cat);
+  const expCanvas=document.getElementById("expenseChart");
+  if(expCanvas){
+    const chartLabels=rows.map(r=>level==="quarter"?`${monthLabel(r.budgetMonth).slice(0,3)} ${r.fortnight}Q`:level==="month"?`${r.fortnight}.ª`:dateLabel(r.date).replace(/ de /g," "));
+    drawBarChart(expCanvas,chartLabels.length?chartLabels:["Sin datos"],chartLabels.length?rows.map(r=>r.expenses):[0],chartLabels.length?rows.map(r=>r.actualExpenses):[0]);
+  }
+};
+
+const renderPlanLegacy=renderPlan;
+renderPlan=function(){
+  renderPlanLegacy();
+  const {level,value}=hierarchicalSelection("plan");
+  const label=value?selectedLabel(level,value):"Sin periodo";
+  document.getElementById("planTitle").textContent="Presupuesto";
+  document.getElementById("planSub").textContent=`Tu plan de lo que entra, lo que sale y lo que te queda. · ${label}`;
+  document.querySelectorAll("#planMonths .plan-month").forEach((section,index)=>{
+    const month=section.dataset.planMonth;
+    const hasPreference=Object.prototype.hasOwnProperty.call(uiState.planMonths||{},month);
+    if(!hasPreference)setPlanMonthOpen(section,index===0,true);
+  });
+};
+
+renderMovements=function(){
+  const level=document.getElementById("movementLevel").value;
+  const value=document.getElementById("movementPeriod").value;
+  const type=document.getElementById("movementTypeFilter").value;
+  const category=document.getElementById("movementCategoryFilter")?.value||"";
+  const query=(document.getElementById("movementSearch")?.value||"").trim().toLocaleLowerCase("es");
+  const scope=selectedMovements(level,value).sort((a,b)=>String(b.date).localeCompare(String(a.date))||num(b.seq)-num(a.seq));
+  const rows=scope.filter(m=>{
+    if(type&&m.type!==type)return false;
+    if(category&&m.categoryId!==category)return false;
+    if(query){
+      const hay=[m.description,movementCategoryName(m),movementDebtName(m),m.account,m.type].join(" ").toLocaleLowerCase("es");
+      if(!hay.includes(query))return false;
+    }
+    return true;
+  });
+  document.getElementById("movementCount").textContent=`${rows.length} movimientos · ${selectedLabel(level,value)}`;
+
+  const income=scope.filter(m=>m.type==="Ingreso").reduce((s,m)=>s+movementAmountCRC(m),0);
+  const expense=scope.filter(m=>m.type==="Gasto").reduce((s,m)=>s+movementAmountCRC(m),0);
+  const debt=scope.filter(m=>m.type==="Pago deuda").reduce((s,m)=>s+movementAmountCRC(m),0);
+  const net=income-expense-debt;
+  document.getElementById("movementSummary").innerHTML=[
+    v7Kpi("↑","green","Ingresos",money(income),`${scope.filter(m=>m.type==="Ingreso").length} movimientos`,"good"),
+    v7Kpi("↓","red","Gastos",money(expense),`${scope.filter(m=>m.type==="Gasto").length} movimientos`,""),
+    v7Kpi("▭","purple","Pagos de deuda",money(debt),`${scope.filter(m=>m.type==="Pago deuda").length} movimientos`,""),
+    v7Kpi("↗","blue","Neto",v7SignedMoney(net),`${scope.length} movimientos`,net>=0?"good":"bad")
+  ].join("");
+
+  const groups=[];
+  rows.forEach(m=>{
+    let g=groups.find(x=>x.date===m.date);
+    if(!g){g={date:m.date,rows:[]};groups.push(g)}
+    g.rows.push(m)
+  });
+  document.getElementById("movementFeed").innerHTML=groups.length?groups.map(g=>`<div class="v7-feed-group">
+    <div class="v7-feed-date"><strong>${v7DateGroupLabel(g.date)}</strong><span>${dateLabel(g.date)}</span></div>
+    ${g.rows.map(m=>{
+      const amt=movementAmountCRC(m),positive=m.type==="Ingreso",label=m.description||movementCategoryName(m)||m.type;
+      return `<div class="v7-transaction-row">
+        <div class="v7-transaction-icon">${v7MovementIcon(m)}</div>
+        <div class="v7-transaction-main"><strong>${v7SafeText(label)}</strong><span>${v7SafeText(m.account||m.type)}${movementDebtName(m)?` · ${v7SafeText(movementDebtName(m))}`:""}</span></div>
+        <div class="v7-category-chip">${v7SafeText(movementCategoryName(m)||m.type)}</div>
+        <div class="v7-transaction-amount ${positive?"income":""}">${positive?"+":"−"} ${money(amt)}</div>
+        <button class="v7-row-menu" type="button" data-delete-movement="${m.id}" title="Eliminar">···</button>
+      </div>`
+    }).join("")}
+  </div>`).join(""):`<div class="empty">No hay movimientos que coincidan con esta vista.</div>`;
+
+  const expenseRows=scope.filter(m=>m.type==="Gasto"),tot=expenseRows.reduce((s,m)=>s+movementAmountCRC(m),0),byCat={};
+  expenseRows.forEach(m=>{const k=movementCategoryName(m)||"Otros";byCat[k]=(byCat[k]||0)+movementAmountCRC(m)});
+  const ranked=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5),topPct=tot&&ranked.length?Math.round(ranked[0][1]/tot*100):0;
+  document.getElementById("movementQuick").innerHTML=`<div class="v7-card-head"><div><h2>Vista rápida</h2><p>${selectedLabel(level,value)}</p></div></div>
+    <div class="v7-donut-placeholder" style="--v7-pct:${topPct}%"><div class="v7-donut-center"><strong>${money(expense)}</strong><span>Gastos</span></div></div>
+    <div class="v7-mini-bars">${ranked.length?ranked.map(([name,val])=>`<div class="v7-mini-bar"><div><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><span>${v7SafeText(name)}</span><span>${tot?Math.round(val/tot*100):0}%</span></div><div class="v7-mini-bar-track"><span style="width:${tot?Math.min(100,val/tot*100):0}%"></span></div></div><strong style="font-size:.66rem;text-align:right">${money(val)}</strong></div>`).join(""):`<div class="muted" style="font-size:.72rem">Todavía no hay gastos reales en este periodo.</div>`}</div>`;
+};
+
+renderDebts=function(){
+  const filter=document.getElementById("debtStatusFilter")?.value||"active";
+  const active=activeDebts(),archived=data.debts.filter(d=>debtStatus(d)==="archived");
+  const rows=data.debts.filter(d=>filter==="all"||debtStatus(d)===filter).sort((a,b)=>{
+    if(debtStatus(a)!==debtStatus(b))return debtStatus(a)==="active"?-1:1;
+    return num(a.priority)-num(b.priority);
+  });
+  const total=activeDebtTotal(),minimum=activeDebtMinimumTotal(),allPayments=active.reduce((s,d)=>s+debtPayments(d),0);
+  document.getElementById("debtHeroValue").textContent=money(total);
+  document.getElementById("debtHeroDelta").textContent=allPayments?`${money(allPayments)} registrados como pagos acumulados`:"Todavía no hay pagos vinculados registrados";
+  document.getElementById("debtHeroDelta").className=`v7-hero-delta ${allPayments?"good":""}`;
+  document.getElementById("debtHeroNote").innerHTML=total>0
+    ? `<strong>La deuda está organizada en ${active.length} compromiso${active.length===1?"":"s"} activo${active.length===1?"":"s"}.</strong><span>Tu siguiente objetivo es reducir primero el costo financiero sin perder liquidez operativa.</span>`
+    : `<strong>No tenés deuda activa registrada.</strong><span>Las deudas archivadas conservan su historial, pero ya no suman al saldo pendiente.</span>`;
+
+  const currentMonth=todayIso().slice(0,7);
+  const paidMonth=(data.movements||[]).filter(m=>m.type==="Pago deuda"&&v7MonthKey(m.date)===currentMonth).reduce((s,m)=>s+movementAmountCRC(m),0);
+  const upcoming=active.map(d=>({...d,nextDate:v7NextPayDate(d)})).filter(d=>d.nextDate).sort((a,b)=>a.nextDate.localeCompare(b.nextDate))[0];
+  const rates=active.map(d=>parseFloat(String(d.rate||"").replace(",", "."))).filter(Number.isFinite);
+  const avgRate=rates.length?rates.reduce((a,b)=>a+b,0)/rates.length:0;
+  document.getElementById("debtKpis").innerHTML=[
+    v7Kpi("↑","green","Pagado este mes",money(paidMonth),paidMonth?"Registrado en movimientos":"Sin pagos este mes",paidMonth?"good":""),
+    v7Kpi("◫","purple","Próximo vencimiento",upcoming?dateLabel(upcoming.nextDate):"—",upcoming?`${v7SafeText(upcoming.name)} · ${money(debtMinimumCRC(upcoming))}`:"Sin fecha configurada",""),
+    v7Kpi("%","red","Interés promedio",rates.length?`${avgRate.toFixed(1)}%`:"—",rates.length?`${rates.length} deudas con tasa`:"Agregá tasas para comparar",""),
+    v7Kpi("▥","blue","Deudas activas",String(active.length),`${money(minimum)} en mínimos / cuotas`,"")
+  ].join("");
+
+  document.getElementById("debtProgress").innerHTML=active.length?active.slice(0,6).map(d=>{
+    const base=debtEquivalent(d),paid=debtPayments(d),pct=base?Math.max(0,Math.min(100,paid/base*100)):0;
+    return `<div class="v7-debt-progress-row"><div class="name">${v7SafeText(d.name)}</div><div class="v7-debt-track"><span style="width:${pct}%"></span></div><div class="pct">${pct.toFixed(0)}% pagado</div></div>`
+  }).join(""):`<div class="empty">No hay deuda activa para graficar.</div>`;
+
+  const rated=active.map(d=>({d,rate:parseFloat(String(d.rate||"").replace(",", "."))||0})).sort((a,b)=>b.rate-a.rate||num(a.d.priority)-num(b.d.priority));
+  const priority=rated[0]?.d||active.slice().sort((a,b)=>num(a.priority)-num(b.priority))[0];
+  document.getElementById("debtStrategy").innerHTML=priority
+    ? `<div class="v7-insight-icon">◎</div><div class="v7-eyebrow" style="margin-bottom:8px;color:var(--success)">PRIORIDAD SUGERIDA</div><h3>Enfocate primero en ${v7SafeText(priority.name)}</h3><p>${parseFloat(String(priority.rate||"").replace(",", "."))?`Tiene una tasa registrada de ${v7SafeText(priority.rate)} y un saldo estimado de ${money(debtOutstanding(priority))}.`:`Es la deuda con mayor prioridad configurada y mantiene un saldo estimado de ${money(debtOutstanding(priority))}.`} Un pago adicional ahí puede acelerar tu estrategia.</p>`
+    : `<div class="v7-insight-icon">✓</div><h3>Sin estrategia pendiente</h3><p>No hay deudas activas para priorizar.</p>`;
+
+  document.getElementById("debtTotal").textContent=`Activas: ${active.length} · saldo estimado ${money(total)} · archivadas ${archived.length}`;
+  document.getElementById("debtList").innerHTML=rows.length?rows.map(d=>{
+    const archivedDebt=debtStatus(d)==="archived",base=debtEquivalent(d),paid=debtPayments(d),out=debtOutstanding(d),pct=base?Math.max(0,Math.min(100,paid/base*100)):0,next=v7NextPayDate(d);
+    const actions=archivedDebt
+      ? `<button class="btn secondary small" data-reactivate-debt="${d.id}">Reactivar</button><button class="btn secondary small" data-edit-debt="${d.id}">Editar</button>`
+      : `<button class="btn secondary small" data-pay-debt="${d.id}">Registrar pago</button><button class="btn secondary small" data-edit-debt="${d.id}">Editar</button><button class="btn secondary small" data-archive-debt="${d.id}">Archivar</button>`;
+    return `<div class="v7-debt-card ${archivedDebt?"archived":""}">
+      <div class="v7-debt-name"><div class="icon">▭</div><div><strong>${v7SafeText(d.name)}</strong><span>${v7SafeText(d.type)}${archivedDebt?" · archivada":""}</span></div></div>
+      <div class="v7-debt-cell"><span>Saldo pendiente</span><strong>${money(out)}</strong></div>
+      <div class="v7-debt-cell"><span>${pct.toFixed(0)}% pagado</span><div class="progress"><span style="width:${pct}%"></span></div><span>${money(paid)} de ${money(base)}</span></div>
+      <div class="v7-debt-cell"><span>Vence</span><strong>${next?dateLabel(next):"—"}</strong></div>
+      <div class="v7-debt-cell"><span>Pago mínimo</span><strong>${money(debtMinimumCRC(d))}</strong></div>
+      <div class="v7-debt-actions">${actions}</div>
+    </div>`
+  }).join(""):`<div class="empty">No hay deudas en esta vista.</div>`;
+};
+
+function refreshV7MovementCategoryFilter(){
+  const el=document.getElementById("movementCategoryFilter");if(!el)return;
+  const current=el.value;
+  const cats=sortedCategories((data.categories||[]).filter(c=>categoryIsActive(c)&&["Ingreso","Gasto","Pago deuda","Movimiento patrimonial"].includes(c.type)));
+  el.innerHTML=`<option value="">Todas</option>${cats.map(c=>`<option value="${c.id}">${safe(c.name)}</option>`).join("")}`;
+  if([...el.options].some(o=>o.value===current))el.value=current;
+}
+function initV7(){
+  refreshV7MovementCategoryFilter();
+  const composer=document.getElementById("movementComposer");
+  document.getElementById("toggleMovementComposer")?.addEventListener("click",()=>{composer.hidden=!composer.hidden;if(!composer.hidden)setTimeout(()=>document.getElementById("mDescription")?.focus(),30)});
+  document.getElementById("closeMovementComposer")?.addEventListener("click",()=>composer.hidden=true);
+  document.getElementById("movementSearch")?.addEventListener("input",renderMovements);
+  document.getElementById("movementCategoryFilter")?.addEventListener("change",renderMovements);
+  document.querySelectorAll("[data-v7-movement-type]").forEach(btn=>btn.addEventListener("click",()=>{
+    document.getElementById("movementTypeFilter").value=btn.dataset.v7MovementType||"";
+    renderMovements();
+  }));
+  document.getElementById("movementForm")?.addEventListener("submit",()=>setTimeout(()=>{if(composer)composer.hidden=true;refreshV7MovementCategoryFilter()},0));
+}
+
+bind();bindReportStudio();initV7();renderDashboard();updateCurrencyHeader();initUiPreferences();setTimeout(()=>{if(needsDailyFx())openFxDialog(true)},80);
 </script>
 </body>
 </html>
