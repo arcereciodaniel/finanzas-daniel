@@ -1072,6 +1072,32 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
 .one-payment-line small{display:block;color:var(--muted);margin-top:4px}
 .one-payment-notice{font-size:.76rem;color:var(--muted);line-height:1.5}
 @media(max-width:750px){.one-collection-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* Movimientos 2.0 */
+.m2-quick-types{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 13px}
+.m2-quick-types button{font-size:.78rem;font-weight:650;padding:8px 12px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:8px}
+.m2-quick-types button.active{background:var(--text);color:var(--app-bg);border-color:var(--text)}
+.m2-more{grid-column:1/-1;border:1px solid var(--border);border-radius:9px;padding:11px 13px;background:var(--surface-2)}
+.m2-more>summary{font-size:.8rem;font-weight:700;cursor:pointer;color:var(--text)}
+.m2-more .form-grid{margin-top:12px}
+.m2-splits{margin:12px 0;display:grid;gap:9px}
+.m2-split-row{display:grid;grid-template-columns:minmax(160px,1fr) minmax(110px,.55fr) auto;gap:9px;align-items:center}
+.m2-split-row input,.m2-split-row select{width:100%}
+.m2-helper,.m2-status{color:var(--muted);font-size:.74rem;line-height:1.5}
+.m2-filter-panel{display:flex;align-items:end;flex-wrap:wrap;gap:10px;margin:0 0 14px}
+.m2-filter-panel .field{min-width:115px;flex:1}
+.m2-filter-panel input,.m2-filter-panel select{width:100%}
+.m2-filter-panel .field label{display:block;color:var(--muted);font-size:.7rem;margin-bottom:5px}
+.m2-feed-actions{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.m2-feed-actions button{border:1px solid transparent;background:transparent;color:var(--muted);border-radius:6px;padding:6px;font-size:.73rem;cursor:pointer}
+.m2-feed-actions button:hover{border-color:var(--border);background:var(--surface-hover);color:var(--text)}
+.v7-transaction-row.m2-row{grid-template-columns:38px minmax(0,1.2fr) minmax(110px,.6fr) auto minmax(120px,max-content)}
+.m2-template-grid{display:grid;gap:10px;margin:0 0 14px}
+.m2-template-card{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;background:var(--surface-2);border:1px solid var(--border);border-radius:9px;padding:12px}
+.m2-template-card strong{font-size:.85rem}
+.m2-template-card small{font-size:.73rem;color:var(--muted);display:block;margin-top:4px}
+.m2-balance-row{display:flex;justify-content:space-between;gap:10px;font-size:.8rem;padding:8px 0;border-top:1px solid var(--border)}
+.m2-balance-row strong{font-variant-numeric:tabular-nums}
+@media(max-width:720px){.m2-split-row{grid-template-columns:1fr 1fr auto}.v7-transaction-row.m2-row{grid-template-columns:36px minmax(0,1fr) auto}.v7-transaction-row.m2-row .v7-category-chip{display:none}.m2-feed-actions{grid-column:2/-1;justify-self:end}}
 </style>
 </head>
 <body>
@@ -1292,24 +1318,42 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
       </div>
       <div class="v7-page-actions">
         <button class="btn secondary" type="button" data-manage-categories>Categorías</button>
+        <button class="btn secondary" type="button" id="addMovementTemplateBtn">Programar frecuente</button>
         <button class="btn" id="toggleMovementComposer" type="button">＋ Agregar movimiento</button>
       </div>
     </div>
 
     <div class="v7-card v7-composer" id="movementComposer" hidden>
       <div class="v7-card-head">
-        <div><h2>Nuevo movimiento</h2><p>Registralo una vez y one - one actualiza el resto.</p></div>
+        <div><h2 id="movementComposerTitle">Nuevo movimiento</h2><p>Registralo en segundos. Las opciones avanzadas son opcionales.</p></div>
         <button class="v7-icon-button" id="closeMovementComposer" type="button" aria-label="Cerrar">×</button>
       </div>
-      <form id="movementForm" class="form-grid">
+      <div class="m2-quick-types" id="movementQuickTypes">
+          <button type="button" data-m2-type="Gasto" class="active">↓ Gasto</button>
+          <button type="button" data-m2-type="Ingreso">↑ Ingreso</button>
+          <button type="button" data-m2-type="Pago deuda">Pago deuda</button>
+        </div>
+        <form id="movementForm" class="form-grid">
+        <input type="hidden" id="mEditId"><input type="hidden" id="mScheduledId">
         <div class="field"><label>Fecha</label><input type="date" id="mDate" required></div>
         <div class="field"><label>Tipo</label><select id="mType" required></select></div>
         <div class="field" id="mCategoryField"><label>Categoría</label><select id="mCategory" required></select></div>
         <div class="field" id="mDebtField"><label>¿Qué préstamo o tarjeta vas a pagar?</label><select id="mDebt"></select><small class="r8-debt-field-help">La categoría de pago se asigna automáticamente.</small></div>
-        <div class="field"><label>Cuenta</label><select id="mAccount"></select></div>
+        <details class="m2-more" id="movementAdvancedFields"><summary>Más opciones · cuenta y método de pago</summary>
+          <div class="form-grid">
+          <div class="field"><label>Cuenta</label><select id="mAccount"></select></div>
+          <div class="field"><label>Método de pago</label><select id="mPaymentMethod"><option value="">No especificado</option><option>Transferencia</option><option>SINPE</option><option>Tarjeta de débito</option><option>Tarjeta de crédito</option><option>Efectivo</option><option>Otro</option></select></div>
+          <div class="field wide"><button type="button" class="btn secondary small" id="manageMovementAccounts">Administrar cuentas</button></div>
+          </div></details>
         <div class="field wide"><label>Descripción</label><input id="mDescription" placeholder="Ej. almuerzo, pago mínimo, salario"></div>
         <div class="field"><label>Monto</label><div class="money-input"><input id="mAmount" type="number" min="0" step="0.01" required><select id="mCurrency"><option value="CRC">CRC ₡</option><option value="USD">USD $</option></select></div></div>
-        <div class="form-actions"><button class="btn" type="submit">Registrar</button></div>
+        <details class="m2-more" id="movementSplitDetails"><summary>Dividir el gasto entre categorías</summary>
+         <p class="m2-helper">Un solo movimiento financiero; cada categoría recibe su porción. La suma debe coincidir con el monto total.</p>
+         <div class="m2-splits" id="movementSplitRows"></div>
+         <button class="btn secondary small" type="button" id="addMovementSplit">+ Otra categoría</button>
+         <div class="m2-status" id="movementSplitStatus"></div>
+        </details>
+        <div class="form-actions"><button class="btn" type="submit" id="movementSubmitBtn">Registrar</button><button type="button" class="btn secondary" id="movementCancelEdit" hidden>Cancelar edición</button></div>
       </form>
     </div>
 
@@ -1322,8 +1366,21 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
       <button class="btn secondary" id="exportMovementsCsv">Exportar CSV</button>
     </div>
 
+    <div class="m2-filter-panel">
+      <div class="field"><label>Desde</label><input type="date" id="movementDateFrom"></div>
+      <div class="field"><label>Hasta</label><input type="date" id="movementDateTo"></div>
+      <div class="field"><label>Cuenta</label><select id="movementAccountFilter"><option value="">Todas</option></select></div>
+      <div class="field"><label>Moneda</label><select id="movementCurrencyFilter"><option value="">Todas</option><option value="CRC">CRC</option><option value="USD">USD</option></select></div>
+      <div class="field"><label>Mínimo original</label><input type="number" id="movementAmountMin" min="0" step=".01"></div>
+      <div class="field"><label>Máximo original</label><input type="number" id="movementAmountMax" min="0" step=".01"></div>
+      <button type="button" class="btn secondary small" id="movementClearFilters">Limpiar filtros</button>
+    </div>
     <div class="v7-kpis" id="movementSummary"></div>
 
+    <div class="v7-card" id="movementTemplatesCard">
+       <div class="v7-card-head"><div><h2>Movimientos programados</h2><p>Recordatorios pendientes de confirmar. No afectan tu saldo hasta registrarlos.</p></div></div>
+       <div id="movementTemplatesList" class="m2-template-grid"></div>
+    </div>
     <div class="v7-movement-layout">
       <div class="v7-card v7-feed-card">
         <div class="v7-card-head">
@@ -1333,6 +1390,7 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
       </div>
       <aside class="v7-stack">
         <div class="v7-card" id="movementQuick"></div>
+        <div class="v7-card" id="movementAccountsSummary"></div>
         <div class="v7-card">
           <div class="v7-card-head"><div><h2>Atajos</h2><p>Vistas que usás con frecuencia.</p></div></div>
           <div class="v7-shortcuts">
