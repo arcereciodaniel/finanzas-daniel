@@ -1145,8 +1145,8 @@ main{padding-top:25px!important}.v7-page-head{padding-right:0!important}
       <div class="field"><label>Tipo</label><select id="dType"><option>Tarjeta</option><option>Préstamo</option><option>Familiar</option><option>Otra</option></select></div>
       <div class="field"><label>Nombre / ID</label><input id="dName" required></div>
       <div class="field"><label>Estado</label><select id="dStatus"><option value="active">Activa</option><option value="archived">Pagada / archivada</option></select></div>
-      <div class="field"><label>Saldo USD</label><input id="dUsd" type="number" min="0" step=".01" value="0"></div>
-      <div class="field"><label>Saldo CRC</label><input id="dCrc" type="number" min="0" step="1" value="0"></div>
+      <div class="field"><label>Saldo base USD</label><input id="dUsd" type="number" min="0" step=".01" value="0"></div>
+      <div class="field"><label>Saldo base CRC</label><input id="dCrc" type="number" min="0" step="1" value="0"></div>
       <div class="field"><label>Conversión USD</label><input id="dFxPreview" readonly value="Usa TC venta diario"></div>
       <div class="field"><label>Límite</label><div class="money-input"><input id="dLimit" type="number" min="0" step=".01" value="0"><select id="dLimitCurrency"><option value="USD">USD $</option><option value="CRC">CRC ₡</option></select></div></div>
       <div class="field"><label>Pago mínimo / cuota</label><div class="money-input"><input id="dMinimum" type="number" min="0" step=".01" value="0"><select id="dMinimumCurrency"><option value="CRC">CRC ₡</option><option value="USD">USD $</option></select></div></div>
@@ -3400,19 +3400,19 @@ renderDebts=function(){
   document.getElementById("debtHeroDelta").textContent=allPayments?`${money(allPayments)} registrados como pagos acumulados`:"Todavía no hay pagos vinculados registrados";
   document.getElementById("debtHeroDelta").className=`v7-hero-delta ${allPayments?"good":""}`;
   document.getElementById("debtHeroNote").innerHTML=total>0
-    ? `<strong>La deuda está organizada en ${active.length} compromiso${active.length===1?"":"s"} activo${active.length===1?"":"s"}.</strong><span>Tu siguiente objetivo es reducir primero el costo financiero sin perder liquidez operativa.</span>`
-    : `<strong>No tenés deuda activa registrada.</strong><span>Las deudas archivadas conservan su historial, pero ya no suman al saldo pendiente.</span>`;
+    ? `<strong>${active.length} compromiso${active.length===1?"":"s"} activo${active.length===1?"":"s"} · mínimo mensual aproximado ${money(minimum)}.</strong><span>El saldo pendiente total refleja obligaciones de largo plazo; no es dinero que debas pagar todo hoy. Revisá las cuotas y próximas fechas de pago.</span>`
+    : `<strong>No tenés deuda activa registrada.</strong><span>Las deudas archivadas conservan su historial y no suman al saldo pendiente.</span>`;
 
   const currentMonth=todayIso().slice(0,7);
   const paidMonth=(data.movements||[]).filter(m=>m.type==="Pago deuda"&&v7MonthKey(m.date)===currentMonth).reduce((s,m)=>s+movementAmountCRC(m),0);
   const upcoming=active.map(d=>({...d,nextDate:v7NextPayDate(d)})).filter(d=>d.nextDate).sort((a,b)=>a.nextDate.localeCompare(b.nextDate))[0];
-  const rates=active.map(d=>parseFloat(String(d.rate||"").replace(",", "."))).filter(Number.isFinite);
-  const avgRate=rates.length?rates.reduce((a,b)=>a+b,0)/rates.length:0;
+  const structured=active.filter(d=>d.type==="Préstamo"||d.type==="Familiar").reduce((sum,d)=>sum+debtOutstanding(d),0);
+  const revolving=active.filter(d=>d.type==="Tarjeta").reduce((sum,d)=>sum+debtOutstanding(d),0);
   document.getElementById("debtKpis").innerHTML=[
-    v7Kpi("↑","green","Pagado este mes",money(paidMonth),paidMonth?"Registrado en movimientos":"Sin pagos este mes",paidMonth?"good":""),
-    v7Kpi("◫","purple","Próximo vencimiento",upcoming?dateLabel(upcoming.nextDate):"—",upcoming?`${v7SafeText(upcoming.name)} · ${money(debtMinimumCRC(upcoming))}`:"Sin fecha configurada",""),
-    v7Kpi("%","red","Interés promedio",rates.length?`${avgRate.toFixed(1)}%`:"—",rates.length?`${rates.length} deudas con tasa`:"Agregá tasas para comparar",""),
-    v7Kpi("▥","blue","Deudas activas",String(active.length),`${money(minimum)} en mínimos / cuotas`,"")
+    v7Kpi("↑","green","Pagado este mes",money(paidMonth),paidMonth?"Registrado en Movimientos":"Sin pagos este mes",paidMonth?"good":""),
+    v7Kpi("◫","purple","Próxima cuota",upcoming?dateLabel(upcoming.nextDate):"—",upcoming?`${v7SafeText(upcoming.name)} · ${money(debtMinimumCRC(upcoming))}`:"Sin fecha configurada",""),
+    v7Kpi("▥","blue","Préstamos y acuerdos",money(structured),"Saldo estimado; pagos según calendario",""),
+    v7Kpi("◧","red","Tarjetas",money(revolving),`${money(minimum)} en mínimos de todas las deudas`,"")
   ].join("");
 
   document.getElementById("debtProgress").innerHTML=active.length?active.slice(0,6).map(d=>{
