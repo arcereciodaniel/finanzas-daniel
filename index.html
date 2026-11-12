@@ -1073,6 +1073,8 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
 .one-payment-notice{font-size:.76rem;color:var(--muted);line-height:1.5}
 @media(max-width:750px){.one-collection-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Movimientos 2.0 */
+#movementTemplatesCard[hidden],#movementAccountsSummary[hidden]{display:none!important}
+
 .m2-audit-card{margin-top:14px}
 .m2-audit-card>summary{cursor:pointer;font-size:.84rem;font-weight:700}
 .m2-audit-card #movementAuditList{display:grid;gap:5px;margin-top:10px}
@@ -1112,7 +1114,7 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
   <div class="topbar">
     <div class="brand" aria-label="one - one, by rastro.">
       <div class="r8-brand-lockup"><span class="r8-wordmark">one - one</span><span class="r8-byline">by <strong>rastro.</strong></span></div>
-      <small class="brand-version">v8.3.0</small>
+      <small class="brand-version">v8.4.0</small>
     </div>
     <nav id="nav">
       <button data-view="dashboard" class="active"><span class="nav-icon" aria-hidden="true">⌂</span><span>Inicio</span></button>
@@ -1535,14 +1537,14 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
   </section>
 
 </main>
-<footer>one - one · by rastro. · v8.3.0 · CRC/USD · Datos locales · No envía información a ningún servidor.</footer>
+<footer>one - one · by rastro. · v8.4.0 · CRC/USD · Datos locales · No envía información a ningún servidor.</footer>
 </div>
 
 
 <dialog id="movementTemplateDialog">
  <div class="dialog-body"><button class="dialog-close" type="button" aria-label="Cerrar">×</button>
   <h2 id="movementTemplateTitle">Programar movimiento</h2>
-  <p class="muted">Cada movimiento recurrente requiere confirmación antes de afectar tu saldo.</p>
+  <p class="muted">Cada movimiento recurrente requiere confirmación antes de afectar tu saldo. Cuando registrés uno, programaremos automáticamente la próxima fecha.</p>
   <form id="movementTemplateForm" class="form-grid">
    <input id="mtId" type="hidden">
    <div class="field wide"><label>Nombre</label><input id="mtName" placeholder="Ej. Recibo de internet" required></div>
@@ -3760,6 +3762,7 @@ function m2RenderAccountSummary(scope){
     before.count++;before.net+=signedMovement(m);byAccount.set(name,before);
   });
   const rows=[...byAccount.entries()].sort((a,b)=>Math.abs(b[1].net)-Math.abs(a[1].net));
+  box.hidden=rows.length===0;
   box.innerHTML=`<div class="v7-card-head"><div><h2>Actividad por cuenta</h2><p>No representa el saldo bancario conciliado.</p></div></div>`+
     (rows.length?rows.map(([name,r])=>`<div class="m2-balance-row"><span>${safe(name)} <small>· ${r.count} mov.</small></span><strong>${r.net>=0?"+":"−"}${money(Math.abs(r.net))}</strong></div>`).join(""):'<div class="empty">Sin actividad por cuenta.</div>');
 }
@@ -3900,6 +3903,7 @@ function m2OpenTemplate(source=null){
 function m2RenderTemplates(){
   const box=document.getElementById("movementTemplatesList");if(!box)return;
   const items=[...(data.movementTemplates||[])].sort((a,b)=>Number(b.active)-Number(a.active)||String(a.nextDate).localeCompare(String(b.nextDate)));
+  const card=document.getElementById("movementTemplatesCard");if(card)card.hidden=items.length===0;
   const freq={weekly:"Semanal",fortnightly:"Cada 14 días",monthly:"Mensual",yearly:"Anual"};
   box.innerHTML=items.length?items.map(t=>{
     const isDue=t.active&&t.nextDate<=todayIso(),cls=t.active?(isDue?" · Por confirmar":" · Próximo"):" · Pausado";
@@ -4144,7 +4148,7 @@ function bind(){
       account:document.getElementById("mAccount").value,
       paymentMethod:document.getElementById("mPaymentMethod").value,
       description:document.getElementById("mDescription").value.trim(),amount,currency,
-      ...(existing?{fxBuy:existing.fxBuy,fxSell:existing.fxSell,fxRef:existing.fxRef,fxDate:existing.fxDate}:currentFxSnapshot()),
+      ...(existing&&normalizeCurrency(existing.currency)===currency?{fxBuy:existing.fxBuy,fxSell:existing.fxSell,fxRef:existing.fxRef,fxDate:existing.fxDate}:currentFxSnapshot()),
       period:periodKey(p),quarter:budgetQuarter(p)};
     const dup=data.movements.find(m=>m.id!==obj.id&&m2SameMovement(m,obj));
     if(dup&&!confirm(`Ya existe un ${type.toLowerCase()} de ${originalMoney(amount,currency)} el ${date} con la misma cuenta y categoría. ¿Registrar igualmente?`))return;
