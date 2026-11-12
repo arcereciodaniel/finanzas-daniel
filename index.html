@@ -3149,6 +3149,67 @@ function openSharedCharge(c=null,preferredGroupId=""){
   document.getElementById("scNotes").value=c?.notes||"";
   document.getElementById("sharedChargeDialog").showModal();
 }
+
+/* Ledger de abonos en la moneda original del cobro. Historial previo respetado. */
+function cobroPaidOriginal(c){
+ const ps=Array.isArray(c.payments)?c.payments:[];
+ return ps.length?Math.min(num(c.amount),ps.reduce((sum,p)=>sum+Math.max(0,num(p.amount)),0)):c.status==="paid"?num(c.amount):0;
+}
+function cobroRemainingOriginal(c){return Math.max(0,num(c.amount)-cobroPaidOriginal(c))}
+function cobroRemainingCRC(c){return currentToCRC(cobroRemainingOriginal(c),c.currency||"CRC","receive")}
+function cobroReceivedCRC(c){return currentToCRC(cobroPaidOriginal(c),c.currency||"CRC","receive")}
+function cobroPaymentState(c){return cobroRemainingOriginal(c)<.005?"Pagado":cobroPaidOriginal(c)>.005?"Parcial":"Pendiente"}
+function syncCobroPaymentState(c){
+ if((c.payments||[]).length){
+  c.status=cobroRemainingOriginal(c)<.005?"paid":"pending";
+  c.paidAt=c.status==="paid"?(c.payments.at(-1)?.date||todayIso()):"";
+ }
+}
+function recordCobroPayment(c,amount,date,note=""){
+ const value=Math.round(Number(amount)*100)/100;
+ if(!c||!Number.isFinite(value)||value<=0||value-cobroRemainingOriginal(c)>.005)return false;
+ c.payments=Array.isArray(c.payments)?c.payments:[];
+ if(c.status==="paid"&&!c.payments.length)return false;
+ c.payments.push({id:id(),date,amount:value,note});
+ syncCobroPaymentState(c);c.snoozedUntil="";
+ return true;
+}
+function cobroPerson(c){return String(c.person||sharedGroupById(c.groupId)?.person||"Sin persona").trim()||"Sin persona"}
+function cobroReminderStart(c){
+ const due=c.dueDate||c.date||todayIso(),days=Math.max(0,Math.min(30,num(c.remindBeforeDays??3)));
+ const early=addDaysIso(due,-days);
+ return c.snoozedUntil&&c.snoozedUntil>early?c.snoozedUntil:early;
+}
+function openCobroPayment(c){
+ if(!c||cobroRemainingOriginal(c)<.005)return;
+ document.getElementById("cpChargeId").value=c.id;
+ document.getElementById("cpDate").value=todayIso();
+ document.getElementById("cpAmount").value=cobroRemainingOriginal(c).toFixed(2);
+ document.getElementById("cpAmount").max=cobroRemainingOriginal(c).toFixed(2);
+ document.getElementById("cpCurrency").value=normalizeCurrency(c.currency);
+ document.getElementById("cpNote").value="";
+ document.getElementById("cpContext").textContent=cobroPerson(c)+" · "+c.description+" · pendiente "+originalMoney(cobroRemainingOriginal(c),c.currency);
+ document.getElementById("cobroPaymentDialog").showModal();
+}
+function openCobroPaymentHistory(c){
+ if(!c)return;
+ document.getElementById("cpHistoryContext").textContent=cobroPerson(c)+" · "+c.description;
+ const payments=c.payments||[];
+ document.getElementById("cpHistoryList").innerHTML=payments.length?payments.map(p=>`<div class="one-payment-line"><span><strong>${originalMoney(p.amount,c.currency)}</strong><small>${dateLabel(p.date)}${p.note?" · "+safe(p.note):""}</small></span><button class="btn danger small" type="button" data-revert-cobro-payment="${safe(c.id)}|${safe(p.id)}">Revertir</button></div>`).join(""):`<div class="empty">${c.status==="paid"?"Pago histórico sin detalle de abonos.":"No se han registrado abonos."}</div>`;
+ document.getElementById("cobroHistoryDialog").showModal();
+}
+function cobroPeopleCards(rows,month){
+ const people=new Map();
+ rows.forEach(c=>{const name=cobroPerson(c),key=name.toLocaleLowerCase("es");if(!people.has(key))people.set(key,{name,charges:[]});people.get(key).charges.push(c)});
+ return [...people.values()].sort((a,b)=>a.name.localeCompare(b.name,"es")).map(person=>{
+  const pending=person.charges.reduce((s,c)=>s+cobroRemainingCRC(c),0),received=person.charges.reduce((s,c)=>s+cobroReceivedCRC(c),0);
+  const next=person.charges.filter(c=>cobroRemainingOriginal(c)>.005).map(c=>c.dueDate||c.date).sort()[0];
+  const groups=new Map();
+  person.charges.forEach(c=>{const key=c.groupId||"",name=sharedGroupById(key)?.name||"Sin grupo";if(!groups.has(key))groups.set(key,{name,rows:[]});groups.get(key).rows.push(c)});
+  return `<article class="one-person-card"><div class="one-person-head"><div><strong>${safe(person.name)}</strong><small>${person.charges.length} cobros${next?" · Próximo "+dateLabel(next):""}</small></div><div class="one-person-totals"><span>Recibido <b>${money(received)}</b></span><span>Pendiente <b>${money(pending)}</b></span></div></div>${[...groups.values()].map(g=>`<details class="one-person-group" open><summary>${safe(g.name)} <small>${money(g.rows.reduce((s,c)=>s+cobroRemainingCRC(c),0))} pendiente</small></summary>${receivableRowsTable(g.rows,"people",month)}</details>`).join("")}</article>`;
+ }).join("")||`<div class="empty">No hay cobros en este período. Registrá el primero para comenzar.</div>`;
+}
+
 function groupReceivableRows(groupId,month){
   return (data.sharedCharges||[]).filter(c=>(c.groupId||"")===groupId&&(c.chargeMonth||monthKey(c.date))===month).sort((a,b)=>a.date.localeCompare(b.date)||String(a.description).localeCompare(String(b.description)));
 }
