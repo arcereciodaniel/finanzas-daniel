@@ -871,6 +871,15 @@ html[data-theme="light"] .r8-card-footer{background:var(--surface-2)}
 
 #mCategoryField[hidden],#mDebtField[hidden]{display:none!important}
 .r8-debt-field-help{display:block;font-size:.7rem;color:var(--muted);margin-top:6px}
+
+/* States are monochrome unless they communicate an actual financial outcome. */
+#view-plan .budget-source.auto,#view-plan .budget-source.manual,#view-plan .budget-source{
+ color:var(--muted);background:var(--surface-2);border-color:var(--border);
+}
+#view-plan .reset-income-budget{color:var(--text)}
+#view-plan .r8-section-heading .negative{color:var(--danger)}
+#view-plan .r8-card-closing.positive,#view-plan #planQuarterSummary .positive{color:var(--success)}
+#view-plan .r8-card-closing.negative,#view-plan #planQuarterSummary .negative{color:var(--danger)}
 </style>
 </head>
 <body>
@@ -2533,8 +2542,10 @@ function renderPlan(){
       <div class="plan-month-body"><div class="r8-fortnight-grid">${cards}</div></div>
     </section>`;
   }).join(""):`<div class="r8-plan-empty">Todavía no hay quincenas configuradas para este período.</div>`;
+  const firstV8Open=!uiState.r8BudgetInitialized;
+  if(firstV8Open){uiState.r8BudgetInitialized=true;saveUiState()}
   document.querySelectorAll("#planMonths .plan-month").forEach(section=>{
-    setPlanMonthOpen(section,planMonthOpenPreference(section.dataset.planMonth),false);
+    setPlanMonthOpen(section,firstV8Open?true:planMonthOpenPreference(section.dataset.planMonth),false);
   });
   document.getElementById("planSummary").textContent=`Cierre ${money(finalClosing)}, variación vs. plan original ${money(finalClosing-staticClosing)}.`;
   document.getElementById("planClosing").innerHTML=`<div class="month-kpi"><div class="summary-label">Saldo inicial</div><div class="summary-value">${money(firstOpening)}</div></div>
