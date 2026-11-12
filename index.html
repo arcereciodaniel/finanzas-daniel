@@ -1047,6 +1047,7 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
 .one-collections-overdue{color:var(--danger)!important}
 @media(max-width:580px){.one-collections-row{align-items:flex-start;flex-direction:column}}
 /* Cobros beta 2: personas, abonos e indicadores */
+#sharedPeopleContainer[hidden],#sharedGroupsContainer[hidden]{display:none!important}
 .one-cobros-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:12px 0 16px}
 .one-cobros-segment{display:flex;gap:3px;background:var(--surface-2);padding:4px;border:1px solid var(--border);border-radius:9px}
 .one-cobros-segment button{border:0;background:transparent;padding:8px 13px;border-radius:6px;color:var(--muted);font-weight:650}
@@ -3217,7 +3218,7 @@ function receivableDisplayRows(groupId,month){
   return (data.sharedCharges||[]).filter(c=>{
     if((c.groupId||"")!==groupId)return false;
     const origin=c.chargeMonth||monthKey(c.date);
-    return origin===month||(origin<month&&c.status!=="paid");
+    return origin===month||(origin<month&&cobroRemainingOriginal(c)>.005);
   }).sort((a,b)=>{
     const ao=a.chargeMonth||monthKey(a.date),bo=b.chargeMonth||monthKey(b.date);
     if(ao!==bo)return ao.localeCompare(bo);
@@ -3227,15 +3228,31 @@ function receivableDisplayRows(groupId,month){
 function allReceivableDisplayRows(month){
   return (data.sharedCharges||[]).filter(c=>{
     const origin=c.chargeMonth||monthKey(c.date);
-    return origin===month||(origin<month&&c.status!=="paid");
+    return origin===month||(origin<month&&cobroRemainingOriginal(c)>.005);
   });
 }
-function isReceivableCarryover(c,month){return (c.chargeMonth||monthKey(c.date))<month&&c.status!=="paid"}
+function isReceivableCarryover(c,month){return (c.chargeMonth||monthKey(c.date))<month&&cobroRemainingOriginal(c)>.005}
 function receivableAmountCRC(c){return currentToCRC(c.amount,c.currency||"CRC","receive")}
 function groupRecurringCount(groupId,month){const g=sharedGroupById(groupId);if(g&&sharedGroupStatus(g)==="archived")return 0;return (data.receivableRecurring||[]).filter(t=>(t.groupId||"")===groupId&&recurringApplies(t,month)).length}
 function receivableRowsTable(rows,sectionKey="",month=selectedReceivableMonth()){
-  const headCheck=rows.length?`<input class="charge-check" type="checkbox" data-select-shared-section="${sectionKey}" aria-label="Seleccionar todos">`:"";
-  return `<div class="table-wrap"><table><thead><tr><th>${headCheck}</th><th>Fecha</th><th>Recordar</th><th>Persona</th><th>Tipo</th><th>Concepto</th><th>Monto</th><th>Estado</th><th>Notas</th><th></th></tr></thead><tbody>${rows.length?rows.map(c=>{const carry=isReceivableCarryover(c,month),origin=c.chargeMonth||monthKey(c.date);return `<tr><td><input class="charge-check" type="checkbox" data-select-shared="${c.id}" ${sharedSelectedChargeIds.has(c.id)?"checked":""} aria-label="Seleccionar cobro"></td><td>${dateLabel(c.date)}${carry?`<br><span class="overdue-badge">Arrastre de ${monthLabel(origin)}</span>`:""}</td><td>${dateLabel(c.dueDate||c.date)}</td><td>${c.person||"—"}</td><td><span class="pill">${c.kind}</span>${c.sourceRecurringId?`<span class="recurring-badge">Mensual</span>`:""}</td><td>${c.description}</td><td class="num">${money(receivableAmountCRC(c))}${originalHint(c.amount,c.currency)}</td><td><span class="status-badge ${c.status==="paid"?"active":"archived"}">${c.status==="paid"?"Pagado":"Pendiente"}</span></td><td>${c.notes||""}</td><td><div class="actions">${!c.groupId?`<button class="btn small" data-group-one-shared="${c.id}">Agrupar</button>`:""}<button class="btn secondary small" data-edit-shared-charge="${c.id}">Editar</button>${c.status==="paid"?`<button class="btn secondary small" data-reopen-shared-charge="${c.id}">Reabrir</button>`:`<button class="btn secondary small" data-pay-shared-charge="${c.id}">Marcar pagado</button>`}<button class="btn danger small" data-delete-shared-charge="${c.id}">${c.sourceRecurringId?"Cancelar recurrencia":"Eliminar"}</button></div></td></tr>`}).join(""):`<tr><td colspan="10" class="empty">Sin cobros ni pendientes arrastrados en ${monthLabel(month)}.</td></tr>`}</tbody></table></div>`;
+ const head=rows.length?`<input class="charge-check" type="checkbox" data-select-shared-section="${safe(sectionKey)}" aria-label="Seleccionar todos">`:"";
+ return `<div class="table-wrap"><table><thead><tr><th>${head}</th><th>Fecha</th><th>Persona</th><th>Concepto</th><th>Total</th><th>Abonado</th><th>Restante</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${rows.length?rows.map(c=>{
+  const carry=isReceivableCarryover(c,month),origin=c.chargeMonth||monthKey(c.date),left=cobroRemainingOriginal(c);
+  return `<tr><td><input class="charge-check" type="checkbox" data-select-shared="${safe(c.id)}" ${sharedSelectedChargeIds.has(c.id)?"checked":""} aria-label="Seleccionar cobro"></td>
+  <td>${dateLabel(c.date)}<br><small class="muted">Cobrar: ${dateLabel(c.dueDate||c.date)}</small>${carry?`<br><span class="overdue-badge">Arrastre ${monthLabel(origin)}</span>`:""}</td>
+  <td>${safe(cobroPerson(c))}</td>
+  <td><strong>${safe(c.description||c.kind)}</strong>${c.sourceRecurringId?`<span class="recurring-badge">Mensual</span>`:""}${c.notes?`<br><small class="muted">${safe(c.notes)}</small>`:""}</td>
+  <td class="num">${money(receivableAmountCRC(c))}${originalHint(c.amount,c.currency)}</td>
+  <td class="num">${money(cobroReceivedCRC(c))}</td><td class="num">${money(cobroRemainingCRC(c))}</td>
+  <td><span class="pill">${cobroPaymentState(c)}</span></td>
+  <td><div class="actions">${!c.groupId?`<button class="btn secondary small" data-group-one-shared="${safe(c.id)}">Agrupar</button>`:""}
+  ${left>.005?`<button class="btn small" data-cobro-pay="${safe(c.id)}">Abonar</button>`:""}
+  <button class="btn secondary small" data-cobro-history="${safe(c.id)}">Historial</button>
+  <button class="btn secondary small" data-edit-shared-charge="${safe(c.id)}">Editar</button>
+  ${c.status==="paid"&&!(c.payments||[]).length?`<button class="btn secondary small" data-reopen-shared-charge="${safe(c.id)}">Reabrir</button>`:""}
+  <button class="btn danger small" data-delete-shared-charge="${safe(c.id)}">${c.sourceRecurringId?"Cancelar recurrencia":"Eliminar"}</button>
+  </div></td></tr>`;
+ }).join(""):`<tr><td colspan="9" class="empty">Sin cobros en ${monthLabel(month)}.</td></tr>`}</tbody></table></div>`;
 }
 function renderSharedCharges(){
   const monthEl=document.getElementById("sharedStatementMonth");
