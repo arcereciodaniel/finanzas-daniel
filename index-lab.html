@@ -868,6 +868,9 @@ html[data-theme="light"] .r8-card-footer{background:var(--surface-2)}
 .r8-edit-cell{display:inline-flex;align-items:center;justify-content:flex-end;min-width:0}
 .r8-unused{border:0;margin-top:4px}.r8-unused>summary{font-size:.69rem;color:var(--muted);cursor:pointer;padding:7px 0;list-style:none}.r8-unused>summary:before{content:"+";display:inline-block;margin-right:7px}.r8-unused[open]>summary:before{content:"−"}.r8-unused>summary::-webkit-details-marker{display:none}
 .r8-detail-income{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:7px 0 0;color:var(--text)}.r8-detail-income span:first-child{margin-right:auto}
+
+#mCategoryField[hidden],#mDebtField[hidden]{display:none!important}
+.r8-debt-field-help{display:block;font-size:.7rem;color:var(--muted);margin-top:6px}
 </style>
 </head>
 <body>
@@ -964,8 +967,8 @@ html[data-theme="light"] .r8-card-footer{background:var(--surface-2)}
           <div class="period-filter" id="dashboardFilters">
             <div><label>Vista</label>
               <select id="dashboardLevel">
-                <option value="quarter" selected>Trimestre</option>
-                <option value="month">Mes</option>
+                <option value="quarter">Trimestre</option>
+                <option value="month" selected>Mes</option>
                 <option value="fortnight">Quincena</option>
               </select>
             </div>
@@ -1060,8 +1063,8 @@ html[data-theme="light"] .r8-card-footer{background:var(--surface-2)}
       <form id="movementForm" class="form-grid">
         <div class="field"><label>Fecha</label><input type="date" id="mDate" required></div>
         <div class="field"><label>Tipo</label><select id="mType" required></select></div>
-        <div class="field"><label>Categoría</label><select id="mCategory" required></select></div>
-        <div class="field"><label>Deuda / acreedor</label><select id="mDebt"></select></div>
+        <div class="field" id="mCategoryField"><label>Categoría</label><select id="mCategory" required></select></div>
+        <div class="field" id="mDebtField"><label>¿Qué préstamo o tarjeta vas a pagar?</label><select id="mDebt"></select><small class="r8-debt-field-help">La categoría de pago se asigna automáticamente.</small></div>
         <div class="field"><label>Cuenta</label><select id="mAccount"></select></div>
         <div class="field wide"><label>Descripción</label><input id="mDescription" placeholder="Ej. almuerzo, pago mínimo, salario"></div>
         <div class="field"><label>Monto</label><div class="money-input"><input id="mAmount" type="number" min="0" step="0.01" required><select id="mCurrency"><option value="CRC">CRC ₡</option><option value="USD">USD $</option></select></div></div>
@@ -2542,6 +2545,7 @@ function renderPlan(){
 
 function initR8(){
   const levelControl=document.getElementById("planLevel");
+  updateMovementFields();
   document.querySelectorAll("[data-r8-plan-level]").forEach(b=>b.addEventListener("click",()=>{
     const next=b.dataset.r8PlanLevel;if(!next||!levelControl)return;
     levelControl.value=next;
@@ -3083,6 +3087,20 @@ function drawLineChart(canvas,labels,a,b){
   line(a,"#7c3aed",false);line(b,"#059669",true);labels.forEach((l,i)=>{const x=p.l+(labels.length===1?0:i*plotW/(labels.length-1));ctx.fillStyle="#667085";ctx.textAlign="center";ctx.fillText(l,x,h-14)});ctx.textAlign="left";
 }
 
+function updateMovementFields(){
+  const type=document.getElementById("mType")?.value||"";
+  const payment=type==="Pago deuda";
+  const categoryField=document.getElementById("mCategoryField"),debtField=document.getElementById("mDebtField");
+  const debtSelect=document.getElementById("mDebt"),categorySelect=document.getElementById("mCategory");
+  if(categoryField)categoryField.hidden=payment;
+  if(debtField)debtField.hidden=!payment;
+  if(debtSelect)debtSelect.required=payment;
+  if(payment){
+    const d=(data.debts||[]).find(x=>x.id===debtSelect?.value);
+    const suggested=suggestDebtCategoryId(d);
+    if(suggested&&categorySelect)categorySelect.value=suggested;
+  }else if(debtSelect){debtSelect.value="";}
+}
 function refreshMovementCategorySelect(selected=""){
   const el=document.getElementById("mCategory");if(!el)return;
   const type=document.getElementById("mType")?.value||"Gasto",current=selected||el.value;
@@ -3217,12 +3235,13 @@ function bind(){
   document.getElementById("reportHistoryRange")?.addEventListener("change",renderReports);
   document.querySelectorAll("[data-report-tab]").forEach(btn=>btn.addEventListener("click",()=>{reportActiveTab=btn.dataset.reportTab||"overview";renderReports()}));
   document.getElementById("movementTypeFilter").addEventListener("change",renderMovements);
-  document.getElementById("mType").addEventListener("change",()=>{refreshMovementCategorySelect();refreshDebtSelect()});
+  document.getElementById("mType").addEventListener("change",()=>{refreshMovementCategorySelect();refreshDebtSelect();updateMovementFields()});
   document.getElementById("mDebt").addEventListener("change",()=>{
     const d=data.debts.find(x=>x.id===document.getElementById("mDebt").value);
     if(d&&document.getElementById("mType").value==="Pago deuda"){
       const cid=suggestDebtCategoryId(d);if(cid)document.getElementById("mCategory").value=cid;
     }
+    updateMovementFields();
   });
   document.getElementById("reconcileBtn").addEventListener("click",openReconcile);
   document.getElementById("cancelReconcileBtn").addEventListener("click",()=>document.getElementById("reconcileDialog").close());
@@ -3248,7 +3267,7 @@ function bind(){
     const seq=++data.movementSeq,categoryId=document.getElementById("mCategory").value,cat=categoryById(categoryId);
     if(!cat)return alert("Selecciona una categoría válida.");
     data.movements.push({id:id(),seq,createdAt:new Date().toISOString(),date,type,categoryId,category:cat.name,debtId:debtObj?.id||"",debt:debtObj?.name||"",account:document.getElementById("mAccount").value,description:document.getElementById("mDescription").value.trim(),amount:num(document.getElementById("mAmount").value),currency:normalizeCurrency(document.getElementById("mCurrency").value),...currentFxSnapshot(),period:periodKey(p),quarter:budgetQuarter(p)});
-    save();e.target.reset();document.getElementById("mDate").value=todayIso();fillSelect(document.getElementById("mType"),MOVEMENT_TYPES);refreshMovementCategorySelect();fillSelect(document.getElementById("mAccount"),ACCOUNTS);document.getElementById("mCurrency").value=displayCurrency();refreshDebtSelect();renderMovements();renderDashboard();renderPlan();
+    save();e.target.reset();document.getElementById("mDate").value=todayIso();fillSelect(document.getElementById("mType"),MOVEMENT_TYPES);refreshMovementCategorySelect();fillSelect(document.getElementById("mAccount"),ACCOUNTS);document.getElementById("mCurrency").value=displayCurrency();refreshDebtSelect();updateMovementFields();renderMovements();renderDashboard();renderPlan();
   });
 
   document.addEventListener("click",e=>{
@@ -3303,6 +3322,7 @@ function bind(){
       document.getElementById("mDebt").value=d.id;
       const suggested=suggestDebtCategoryId(d);if(suggested)document.getElementById("mCategory").value=suggested;
       document.getElementById("mDescription").value=`Pago ${d.name}`;
+      updateMovementFields();
       const composer=document.getElementById("movementComposer");if(composer)composer.hidden=false;
       document.getElementById("mAmount").focus();
     }
