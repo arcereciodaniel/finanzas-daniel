@@ -3741,6 +3741,96 @@ function m2RenderAccountSummary(scope){
   box.innerHTML=`<div class="v7-card-head"><div><h2>Actividad por cuenta</h2><p>No representa el saldo bancario conciliado.</p></div></div>`+
     (rows.length?rows.map(([name,r])=>`<div class="m2-balance-row"><span>${safe(name)} <small>· ${r.count} mov.</small></span><strong>${r.net>=0?"+":"−"}${money(Math.abs(r.net))}</strong></div>`).join(""):'<div class="empty">Sin actividad por cuenta.</div>');
 }
+
+/* División contable: las líneas son asignaciones del mismo cargo, no nuevos cargos. */
+function m2AddSplitRow(categoryId="",amount=""){
+  const box=document.getElementById("movementSplitRows");if(!box)return;
+  const choices=categoriesOfType("Gasto"),selected=categoryId||choices[0]?.id||"";
+  const opts=[...choices];
+  if(selected&&!opts.some(c=>c.id===selected)){const historic=categoryById(selected);if(historic)opts.push(historic)}
+  const row=document.createElement("div");row.className="m2-split-row";
+  row.innerHTML=`<select class="m2-split-category" aria-label="Categoría del gasto">${opts.map(c=>`<option value="${safe(c.id)}">${safe(c.name)}</option>`).join("")}</select>
+    <input class="m2-split-amount" type="number" min="0.01" step="0.01" placeholder="Monto" aria-label="Monto en moneda original" value="${amount!==""?String(amount):""}">
+    <button type="button" class="btn secondary small" data-m2-remove-split title="Quitar línea">×</button>`;
+  box.appendChild(row);row.querySelector("select").value=selected;
+  m2SplitMessage();
+}
+function m2GetSplits(){
+  const box=document.getElementById("movementSplitRows");
+  if(!document.getElementById("movementSplitDetails")?.open||!box?.children.length)return {splits:[],error:""};
+  const splits=[...box.querySelectorAll(".m2-split-row")].map(row=>({
+    categoryId:row.querySelector(".m2-split-category").value,
+    amount:Number(row.querySelector(".m2-split-amount").value)
+  }));
+  if(splits.length<2)return {splits:[],error:"Para dividir, agregá dos o más categorías."};
+  if(splits.some(x=>!x.categoryId||!Number.isFinite(x.amount)||x.amount<=0))return {splits:[],error:"Cada línea necesita una categoría y un monto positivo."};
+  if(new Set(splits.map(x=>x.categoryId)).size!==splits.length)return {splits:[],error:"No repitás categorías; sumá los importes en una sola línea."};
+  const total=Number(document.getElementById("mAmount")?.value);
+  const allocated=Math.round(splits.reduce((sum,x)=>sum+x.amount,0)*100)/100;
+  if(!Number.isFinite(total)||Math.abs(total-allocated)>.005)return {splits:[],error:`La distribución suma ${allocated.toFixed(2)} y el movimiento es ${(total||0).toFixed(2)}. Deben coincidir.`};
+  return {splits,error:""};
+}
+function m2SplitMessage(){
+  const el=document.getElementById("movementSplitStatus");if(!el)return;
+  const box=document.getElementById("movementSplitRows");
+  if(!box?.children.length){el.textContent="Agregá al menos dos categorías para dividir el gasto.";return}
+  const totals=[...box.querySelectorAll(".m2-split-amount")].reduce((s,input)=>s+num(input.value),0);
+  const original=num(document.getElementById("mAmount")?.value);
+  el.textContent=`Asignado: ${totals.toFixed(2)} / Total: ${original.toFixed(2)}`;
+}
+function m2ResetComposer(close=true){
+  const form=document.getElementById("movementForm");form?.reset();
+  document.getElementById("mEditId").value="";
+  document.getElementById("mScheduledId").value="";
+  document.getElementById("movementComposerTitle").textContent="Nuevo movimiento";
+  document.getElementById("movementSubmitBtn").textContent="Registrar";
+  document.getElementById("movementCancelEdit").hidden=true;
+  document.getElementById("movementSplitRows").innerHTML="";
+  document.getElementById("movementSplitDetails").open=false;
+  document.getElementById("movementAdvancedFields").open=false;
+  document.getElementById("mDate").value=todayIso();
+  document.getElementById("mType").value="Gasto";
+  document.getElementById("mCurrency").value=displayCurrency();
+  refreshMovementCategorySelect();refreshDebtSelect();m2RefreshAccounts("");updateMovementFields();m2RefreshQuickTypes();
+  if(close)document.getElementById("movementComposer").hidden=true;
+}
+function m2OpenComposer(m=null,{repeat=false,scheduledId=""}={}){
+  m2ResetComposer(false);
+  const original=m&&!(repeat||scheduledId);
+  document.getElementById("mEditId").value=original?m.id:"";
+  document.getElementById("mScheduledId").value=scheduledId;
+  document.getElementById("movementComposerTitle").textContent=original?"Editar movimiento":repeat?"Repetir movimiento":scheduledId?"Confirmar programado":"Nuevo movimiento";
+  document.getElementById("movementSubmitBtn").textContent=original?"Guardar cambios":"Registrar";
+  document.getElementById("movementCancelEdit").hidden=!original&&!repeat&&!scheduledId;
+  if(m){
+    document.getElementById("mType").value=m.type||"Gasto";
+    document.getElementById("mDate").value=repeat?todayIso():m.date||todayIso();
+    refreshMovementCategorySelect(m.categoryId);
+    const category=document.getElementById("mCategory");
+    if(m.categoryId&&!Array.from(category.options).some(o=>o.value===m.categoryId)){
+      const past=categoryById(m.categoryId);
+      if(past){const option=document.createElement("option");option.value=past.id;option.textContent=past.name+" (archivada)";category.appendChild(option)}
+    }
+    if(m.categoryId)category.value=m.categoryId;
+    refreshDebtSelect(m.debtId||"");
+    document.getElementById("mDebt").value=m.debtId||"";
+    m2RefreshAccounts(m.account||"");
+    document.getElementById("mDescription").value=m.description||"";
+    document.getElementById("mAmount").value=m.amount;
+    document.getElementById("mCurrency").value=normalizeCurrency(m.currency);
+    document.getElementById("mPaymentMethod").value=m.paymentMethod||"";
+    if((m.splits||[]).length){
+      document.getElementById("movementSplitDetails").open=true;
+      m.splits.forEach(x=>m2AddSplitRow(x.categoryId,x.amount));
+    }
+    document.getElementById("movementAdvancedFields").open=!!(m.account||m.paymentMethod);
+  }
+  updateMovementFields();m2RefreshQuickTypes();
+  document.getElementById("movementComposer").hidden=false;
+  document.getElementById("movementComposer").scrollIntoView?.({behavior:"smooth",block:"start"});
+  document.getElementById("mAmount").focus();
+}
+
 function m2RefreshQuickTypes(){
   const type=document.getElementById("mType")?.value;
   document.querySelectorAll("[data-m2-type]").forEach(b=>b.classList.toggle("active",b.dataset.m2Type===type));
