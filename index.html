@@ -1528,6 +1528,37 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
 </div>
 
 
+<dialog id="movementTemplateDialog">
+ <div class="dialog-body"><button class="dialog-close" type="button" aria-label="Cerrar">×</button>
+  <h2 id="movementTemplateTitle">Programar movimiento</h2>
+  <p class="muted">Cada movimiento recurrente requiere confirmación antes de afectar tu saldo.</p>
+  <form id="movementTemplateForm" class="form-grid">
+   <input id="mtId" type="hidden">
+   <div class="field wide"><label>Nombre</label><input id="mtName" placeholder="Ej. Recibo de internet" required></div>
+   <div class="field"><label>Tipo</label><select id="mtType"><option>Gasto</option><option>Ingreso</option><option>Pago deuda</option></select></div>
+   <div class="field"><label>Frecuencia</label><select id="mtFrequency"><option value="weekly">Semanal</option><option value="fortnightly">Quincenal (14 días)</option><option value="monthly" selected>Mensual</option><option value="yearly">Anual</option></select></div>
+   <div class="field"><label>Próxima fecha</label><input id="mtNextDate" type="date" required></div>
+   <div class="field"><label>Categoría</label><select id="mtCategory" required></select></div>
+   <div class="field" id="mtDebtField" hidden><label>Deuda</label><select id="mtDebt"></select></div>
+   <div class="field"><label>Monto</label><input id="mtAmount" type="number" min=".01" step=".01" required></div>
+   <div class="field"><label>Moneda</label><select id="mtCurrency"><option value="CRC">CRC ₡</option><option value="USD">USD $</option></select></div>
+   <div class="field wide"><label>Descripción</label><input id="mtDescription" placeholder="Concepto"></div>
+   <div class="field wide"><label>Cuenta</label><select id="mtAccount"></select></div>
+   <div class="dialog-actions wide"><button type="button" class="btn secondary" id="cancelMovementTemplate">Cancelar</button><button type="submit" class="btn">Guardar programación</button></div>
+  </form>
+ </div>
+</dialog>
+<dialog id="movementAccountsDialog">
+ <div class="dialog-body"><button class="dialog-close" type="button" aria-label="Cerrar">×</button>
+  <h2>Administrar cuentas</h2>
+  <p class="muted">Clasificá los movimientos por cuenta. Los totales mostrados son actividad registrada, no saldos bancarios conciliados.</p>
+  <form id="movementAccountForm" class="form-grid">
+   <div class="field wide"><label>Nombre de cuenta</label><input id="newMovementAccount" maxlength="60" placeholder="Ej. Banco, efectivo, tarjeta" required></div>
+   <div class="dialog-actions wide"><button type="button" class="btn secondary" id="closeMovementAccounts">Cerrar</button><button type="submit" class="btn">Agregar cuenta</button></div>
+  </form>
+  <div class="m2-helper" id="movementAccountsList"></div>
+ </div>
+</dialog>
 <dialog id="modulesDialog" class="one-modules-dialog" aria-labelledby="modulesDialogTitle">
   <div style="padding:20px 22px;border-bottom:1px solid var(--border)"><h2 id="modulesDialogTitle">Herramientas adicionales</h2><p>Activá las herramientas que querés utilizar. Podés ocultarlas cuando no las necesités sin perder sus datos.</p></div>
   <div class="one-module-fixed"><strong>Siempre visibles:</strong> Inicio · Presupuesto · Movimientos</div>
@@ -1941,6 +1972,9 @@ const initialData = {
   receivableRecurring:[],
   categories:clone(DEFAULT_CATEGORIES),
   movementSeq:0,
+  movementTemplates:[],
+  movementAudit:[],
+  accounts:[...ACCOUNTS],
   debts:[]
 };
 
@@ -1998,6 +2032,11 @@ function migrateData(raw){
   raw.settings.displayCurrency=normalizeCurrency(raw.settings.displayCurrency||"CRC");
   raw.periods=Array.isArray(raw.periods)?raw.periods:[];
   raw.movements=Array.isArray(raw.movements)?raw.movements:[];
+  raw.movementTemplates=Array.isArray(raw.movementTemplates)?raw.movementTemplates:[];
+  raw.movementAudit=Array.isArray(raw.movementAudit)?raw.movementAudit:[];
+  raw.accounts=Array.isArray(raw.accounts)?raw.accounts.filter(a=>typeof a==="string"&&a.trim()):[...ACCOUNTS];
+  raw.accounts=[...new Set([...ACCOUNTS,...raw.accounts,...raw.movements.map(m=>m.account).filter(Boolean)])];
+  raw.movementTemplates.forEach(t=>{t.id=t.id||id();t.active=t.active!==false;t.frequency=["weekly","fortnightly","monthly","yearly"].includes(t.frequency)?t.frequency:"monthly";t.nextDate=t.nextDate||todayIso();t.amount=num(t.amount);t.currency=normalizeCurrency(t.currency||"CRC")});
   raw.reconciliations=Array.isArray(raw.reconciliations)?raw.reconciliations:[];
   raw.debts=Array.isArray(raw.debts)?raw.debts:[];
   raw.reserves=Array.isArray(raw.reserves)?raw.reserves:[];
@@ -2098,6 +2137,7 @@ function migrateData(raw){
   raw.movements.forEach((m,index)=>{
     if(!Number.isFinite(Number(m.seq))||Number(m.seq)<=0)m.seq=++maxSeq; else maxSeq=Math.max(maxSeq,Number(m.seq));
     m.createdAt=m.createdAt||`${m.date||"2000-01-01"}T12:00:00`;
+    m.splits=Array.isArray(m.splits)?m.splits.filter(x=>x&&x.categoryId&&num(x.amount)>0).map(x=>({categoryId:String(x.categoryId),amount:num(x.amount)})):[];m.paymentMethod=m.paymentMethod||"";
     m.currency=normalizeCurrency(m.currency||"CRC");m.fxBuy=num(m.fxBuy);m.fxSell=num(m.fxSell);m.fxRef=num(m.fxRef);m.fxDate=m.fxDate||"";
     if(m.category==="Saldo vencido teléfono")m.category="Teléfonos";
     const desc=String(m.description||"").toLowerCase();
