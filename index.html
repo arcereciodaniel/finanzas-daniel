@@ -989,7 +989,7 @@ html[data-theme="dark"]{
   <div class="topbar">
     <div class="brand" aria-label="one + one, by rastro.">
       <div class="r8-brand-lockup"><span class="r8-wordmark">one + one</span><span class="r8-byline">by <strong>rastro.</strong></span></div>
-      <small class="brand-version">v8.0.3</small>
+      <small class="brand-version">v8.0.4</small>
     </div>
     <nav id="nav">
       <button data-view="dashboard" class="active"><span class="nav-icon" aria-hidden="true">⌂</span><span>Inicio</span></button>
@@ -1352,7 +1352,7 @@ html[data-theme="dark"]{
   </section>
 
 </main>
-<footer>one + one · by rastro. · v8.0.3 · CRC/USD · Datos locales · No envía información a ningún servidor.</footer>
+<footer>one + one · by rastro. · v8.0.4 · CRC/USD · Datos locales · No envía información a ningún servidor.</footer>
 </div>
 
 
@@ -3680,7 +3680,16 @@ function applyTheme(){
 function saveUiPrefs(){localStorage.setItem(UI_PREFS_KEY,JSON.stringify(uiPrefs))}
 function initUiPreferences(){
  document.documentElement.lang='es';
- document.querySelectorAll('[data-theme-choice]').forEach(b=>b.addEventListener('click',()=>{uiPrefs.theme=b.dataset.themeChoice;saveUiPrefs();applyTheme()}));
+ document.querySelectorAll('[data-theme-choice]').forEach(b=>b.addEventListener('click',()=>{
+   uiPrefs.theme=b.dataset.themeChoice;
+   saveUiPrefs();
+   applyTheme();
+   // Canvas se pinta en JS: al cambiar de tema hay que redibujarlo.
+   requestAnimationFrame(()=>{
+     if(document.getElementById("view-dashboard")?.classList.contains("active"))renderDashboard();
+     else if(document.getElementById("view-reports")?.classList.contains("active"))renderReports();
+   });
+ }));
  const sidebarToggle=document.getElementById('sidebarToggle');
  if(sidebarToggle){sidebarToggle.addEventListener('click',()=>{uiPrefs.sidebarCollapsed=!uiPrefs.sidebarCollapsed;saveUiPrefs();applyTheme()})}
  document.querySelectorAll('.dialog-close').forEach(b=>b.addEventListener('click',()=>b.closest('dialog')?.close()));
@@ -3764,12 +3773,21 @@ renderDashboard=function(){
   const liquidityColor=getComputedStyle(document.documentElement).getPropertyValue("--one-chart-liquidity").trim()||"#c8cfcd";
   const cashCanvas=document.getElementById("cashChart"),emptyChart=document.getElementById("cashChartEmpty");
   if(cashCanvas)cashCanvas.hidden=!hist.length;
-  if(emptyChart)emptyChart.hidden=!!hist.length;
-  if(hist.length&&typeof drawReportLine==="function")drawReportLine(cashCanvas,labels,[{values:balances,color:liquidityColor}]);
+  if(emptyChart){
+    emptyChart.hidden=!!hist.length;
+    if(!hist.length)emptyChart.textContent="Aún no hay saldos operativos reales hasta hoy. El presupuesto es una proyección; para iniciar este historial, registrá un movimiento real o actualizá tu saldo en Conciliación de saldo.";
+  }
+  if(hist.length&&cashCanvas&&typeof drawReportLine==="function"){
+    // Dibujar con el tamaño final del contenedor para evitar un canvas vacío.
+    requestAnimationFrame(()=>{
+      if(cashCanvas.hidden||!cashCanvas.isConnected||!document.getElementById("view-dashboard")?.classList.contains("active"))return;
+      drawReportLine(cashCanvas,labels,[{values:balances,color:liquidityColor}]);
+    });
+  }
   document.getElementById("dashboardChartMeta").textContent=
     hist.length>1?`${hist[0].label} – Hoy · saldo operativo real`:
-    hist.length===1?"Saldo operativo de hoy · histórico en formación":
-    "Aún no hay saldos operativos registrados";
+    hist.length===1?`Saldo operativo de hoy: ${money(hist[0].balance)} · historial en formación`:
+    "Aún no hay saldos operativos reales registrados";
 
   const usage=summary.plannedExpense?summary.realExpense/summary.plannedExpense:null;
   const insight=document.getElementById("dashboardInsight");
@@ -3956,7 +3974,7 @@ function initV7(){
   document.getElementById("movementForm")?.addEventListener("submit",()=>setTimeout(()=>{if(composer)composer.hidden=true;refreshV7MovementCategoryFilter()},0));
 }
 
-bind();bindReportStudio();initV7();initR8();renderDashboard();updateCurrencyHeader();initUiPreferences();setTimeout(()=>{if(needsDailyFx())openFxDialog(true)},80);
+bind();bindReportStudio();initV7();initR8();initUiPreferences();renderDashboard();updateCurrencyHeader();setTimeout(()=>{if(needsDailyFx())openFxDialog(true)},80);
 </script>
 </body>
 </html>
