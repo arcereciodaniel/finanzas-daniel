@@ -3197,7 +3197,7 @@ function openCobroPaymentHistory(c){
  document.getElementById("cpHistoryContext").textContent=cobroPerson(c)+" · "+c.description;
  const payments=c.payments||[];
  document.getElementById("cpHistoryList").innerHTML=payments.length?payments.map(p=>`<div class="one-payment-line"><span><strong>${originalMoney(p.amount,c.currency)}</strong><small>${dateLabel(p.date)}${p.note?" · "+safe(p.note):""}</small></span><button class="btn danger small" type="button" data-revert-cobro-payment="${safe(c.id)}|${safe(p.id)}">Revertir</button></div>`).join(""):`<div class="empty">${c.status==="paid"?"Pago histórico sin detalle de abonos.":"No se han registrado abonos."}</div>`;
- document.getElementById("cobroHistoryDialog").showModal();
+ const dialog=document.getElementById("cobroHistoryDialog");if(!dialog.open)dialog.showModal();
 }
 function cobroPeopleCards(rows,month){
  const people=new Map();
@@ -3235,7 +3235,7 @@ function isReceivableCarryover(c,month){return (c.chargeMonth||monthKey(c.date))
 function receivableAmountCRC(c){return currentToCRC(c.amount,c.currency||"CRC","receive")}
 function groupRecurringCount(groupId,month){const g=sharedGroupById(groupId);if(g&&sharedGroupStatus(g)==="archived")return 0;return (data.receivableRecurring||[]).filter(t=>(t.groupId||"")===groupId&&recurringApplies(t,month)).length}
 function receivableRowsTable(rows,sectionKey="",month=selectedReceivableMonth()){
- const head=rows.length?`<input class="charge-check" type="checkbox" data-select-shared-section="${safe(sectionKey)}" aria-label="Seleccionar todos">`:"";
+ const head=rows.length&&sectionKey!=="people"?`<input class="charge-check" type="checkbox" data-select-shared-section="${safe(sectionKey)}" aria-label="Seleccionar todos">`:"";
  return `<div class="table-wrap"><table><thead><tr><th>${head}</th><th>Fecha</th><th>Persona</th><th>Concepto</th><th>Total</th><th>Abonado</th><th>Restante</th><th>Estado</th><th>Acciones</th></tr></thead><tbody>${rows.length?rows.map(c=>{
   const carry=isReceivableCarryover(c,month),origin=c.chargeMonth||monthKey(c.date),left=cobroRemainingOriginal(c);
   return `<tr><td><input class="charge-check" type="checkbox" data-select-shared="${safe(c.id)}" ${sharedSelectedChargeIds.has(c.id)?"checked":""} aria-label="Seleccionar cobro"></td>
@@ -3786,9 +3786,24 @@ function bind(){
     const groupOneShared=e.target.closest("[data-group-one-shared]");if(groupOneShared)openAssignSharedGroup([groupOneShared.dataset.groupOneShared]);
     const selectUngrouped=e.target.closest("[data-select-all-ungrouped]");if(selectUngrouped){receivableDisplayRows("",selectedReceivableMonth()).forEach(c=>sharedSelectedChargeIds.add(c.id));renderSharedCharges();}
     const printShared=e.target.closest("[data-print-shared-group]");if(printShared)printSharedStatement(printShared.dataset.printSharedGroup);
+    const payCobro=e.target.closest("[data-cobro-pay]");
+    if(payCobro){openCobroPayment(data.sharedCharges.find(c=>c.id===payCobro.dataset.cobroPay));return;}
+    const historyCobro=e.target.closest("[data-cobro-history]");
+    if(historyCobro){openCobroPaymentHistory(data.sharedCharges.find(c=>c.id===historyCobro.dataset.cobroHistory));return;}
+    const undo=e.target.closest("[data-revert-cobro-payment]");
+    if(undo){
+      const [cid,pid]=undo.dataset.revertCobroPayment.split("|"),c=data.sharedCharges.find(x=>x.id===cid);
+      if(c&&confirm("¿Revertir este abono? El pendiente aumentará.")){
+        c.payments=(c.payments||[]).filter(p=>p.id!==pid);c.status="pending";c.paidAt="";
+        syncCobroPaymentState(c);save();openCobroPaymentHistory(c);renderSharedCharges();renderDashboard();
+      }
+      return;
+    }
+    const snooze=e.target.closest("[data-snooze-cobro]");
+    if(snooze){const c=data.sharedCharges.find(x=>x.id===snooze.dataset.snoozeCobro);if(c){c.snoozedUntil=addDaysIso(todayIso(),3);save();renderDashboard();}return;}
     const editShared=e.target.closest("[data-edit-shared-charge]");if(editShared)openSharedCharge(data.sharedCharges.find(c=>c.id===editShared.dataset.editSharedCharge));
-    const payShared=e.target.closest("[data-pay-shared-charge]");if(payShared){const c=data.sharedCharges.find(x=>x.id===payShared.dataset.paySharedCharge);if(c){c.status="paid";c.paidAt=todayIso();save();renderSharedCharges();}}
-    const reopenShared=e.target.closest("[data-reopen-shared-charge]");if(reopenShared){const c=data.sharedCharges.find(x=>x.id===reopenShared.dataset.reopenSharedCharge);if(c){c.status="pending";c.paidAt="";save();renderSharedCharges();}}
+    const payShared=e.target.closest("[data-pay-shared-charge]");if(payShared){openCobroPayment(data.sharedCharges.find(x=>x.id===payShared.dataset.paySharedCharge));return;}
+    const reopenShared=e.target.closest("[data-reopen-shared-charge]");if(reopenShared){const c=data.sharedCharges.find(x=>x.id===reopenShared.dataset.reopenSharedCharge);if(c&&!(c.payments||[]).length&&confirm("¿Reabrir este cobro pagado?")){c.status="pending";c.paidAt="";save();renderSharedCharges();renderDashboard();}}
     const delShared=e.target.closest("[data-delete-shared-charge]");if(delShared){const c=data.sharedCharges.find(x=>x.id===delShared.dataset.deleteSharedCharge);if(c?.sourceRecurringId)cancelRecurringFromMonth(c);else if(c&&confirm(`¿Eliminar “${c.description}”?`)){data.sharedCharges=data.sharedCharges.filter(x=>x.id!==c.id);save();renderSharedCharges();}}
     const delReserveTxn=e.target.closest("[data-delete-reserve-txn]");if(delReserveTxn&&confirm("¿Eliminar este movimiento de fondo?")){data.reserveMovements=data.reserveMovements.filter(t=>t.id!==delReserveTxn.dataset.deleteReserveTxn);save();renderCapital();renderDashboard();renderPlan()}
     const delRec=e.target.closest("[data-delete-reconcile]");
@@ -3833,6 +3848,17 @@ function bind(){
     }
   });
 
+  document.getElementById("cobrosPeopleTab").addEventListener("click",()=>{uiState.cobrosDisplayMode="people";saveUiState();renderSharedCharges()});
+  document.getElementById("cobrosGroupsTab").addEventListener("click",()=>{uiState.cobrosDisplayMode="groups";saveUiState();renderSharedCharges()});
+  document.getElementById("cpCancel").addEventListener("click",()=>document.getElementById("cobroPaymentDialog").close());
+  document.getElementById("cpHistoryClose").addEventListener("click",()=>document.getElementById("cobroHistoryDialog").close());
+  document.getElementById("cpForm").addEventListener("submit",e=>{
+    e.preventDefault();
+    const c=data.sharedCharges.find(x=>x.id===document.getElementById("cpChargeId").value);
+    const amount=Number(document.getElementById("cpAmount").value);
+    if(!recordCobroPayment(c,amount,document.getElementById("cpDate").value,document.getElementById("cpNote").value.trim()))return alert("El abono debe ser positivo y no superar el saldo pendiente.");
+    save();document.getElementById("cobroPaymentDialog").close();renderSharedCharges();renderDashboard();
+  });
   document.getElementById("addSharedGroupBtn").addEventListener("click",()=>openSharedGroup());
   document.getElementById("addSharedChargeBtn").addEventListener("click",()=>openSharedCharge());
   document.getElementById("cancelSharedGroupBtn").addEventListener("click",()=>document.getElementById("sharedGroupDialog").close());
