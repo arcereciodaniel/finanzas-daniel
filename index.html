@@ -4096,15 +4096,59 @@ function bind(){
   document.getElementById("printBtn").addEventListener("click",()=>window.print());
 
   document.getElementById("movementForm").addEventListener("submit",e=>{
-    e.preventDefault();const date=document.getElementById("mDate").value,p=periodForDate(date);
-    if(!p)return alert("La fecha no pertenece a los trimestres configurados.");
-    const type=document.getElementById("mType").value, debtId=document.getElementById("mDebt").value;
-    const debtObj=data.debts.find(d=>d.id===debtId);
-    if(type==="Pago deuda"&&!debtObj)return alert("Selecciona la deuda o acreedor.");
-    const seq=++data.movementSeq,categoryId=document.getElementById("mCategory").value,cat=categoryById(categoryId);
-    if(!cat)return alert("Selecciona una categoría válida.");
-    data.movements.push({id:id(),seq,createdAt:new Date().toISOString(),date,type,categoryId,category:cat.name,debtId:debtObj?.id||"",debt:debtObj?.name||"",account:document.getElementById("mAccount").value,description:document.getElementById("mDescription").value.trim(),amount:num(document.getElementById("mAmount").value),currency:normalizeCurrency(document.getElementById("mCurrency").value),...currentFxSnapshot(),period:periodKey(p),quarter:budgetQuarter(p)});
-    save();e.target.reset();document.getElementById("mDate").value=todayIso();fillSelect(document.getElementById("mType"),MOVEMENT_TYPES);refreshMovementCategorySelect();fillSelect(document.getElementById("mAccount"),ACCOUNTS);document.getElementById("mCurrency").value=displayCurrency();refreshDebtSelect();updateMovementFields();renderMovements();renderDashboard();renderPlan();
+    e.preventDefault();
+    const editId=document.getElementById("mEditId").value;
+    const existing=editId?data.movements.find(m=>m.id===editId):null;
+    if(editId&&!existing)return alert("El movimiento que intentás editar ya no existe.");
+    const date=document.getElementById("mDate").value,p=periodForDate(date);
+    if(!p)return alert("La fecha no pertenece a los trimestres configurados. Configurá el período desde Presupuesto.");
+    const type=document.getElementById("mType").value,categoryId=document.getElementById("mCategory").value;
+    const debtId=document.getElementById("mDebt").value,debtObj=data.debts.find(d=>d.id===debtId);
+    if(type==="Pago deuda"&&!debtObj)return alert("Seleccioná la deuda o acreedor.");
+    const category=categoryById(categoryId);
+    if(!category||category.type!==type)return alert("Seleccioná una categoría válida para el tipo de movimiento.");
+    if(!categoryIsActive(category)&&(!existing||existing.categoryId!==categoryId))return alert("La categoría seleccionada está archivada; elegí una categoría activa.");
+    const amount=Number(document.getElementById("mAmount").value);
+    if(!Number.isFinite(amount)||amount<=0)return alert("El monto debe ser mayor que cero.");
+    const currency=normalizeCurrency(document.getElementById("mCurrency").value);
+    const details=document.getElementById("movementSplitDetails");
+    const distribution=type==="Gasto"?m2GetSplits():{splits:[],error:""};
+    if(distribution.error)return alert(distribution.error);
+    const splits=distribution.splits;
+    const obj={...existing,id:existing?.id||id(),seq:existing?.seq||data.movementSeq+1,
+      createdAt:existing?.createdAt||new Date().toISOString(),date,type,categoryId:splits.length?splits[0].categoryId:categoryId,
+      category:categoryById(splits.length?splits[0].categoryId:categoryId)?.name||category.name,
+      splits,debtId:type==="Pago deuda"?(debtObj?.id||""):"",debt:type==="Pago deuda"?(debtObj?.name||""):"",
+      account:document.getElementById("mAccount").value,
+      paymentMethod:document.getElementById("mPaymentMethod").value,
+      description:document.getElementById("mDescription").value.trim(),amount,currency,
+      ...(existing?{fxBuy:existing.fxBuy,fxSell:existing.fxSell,fxRef:existing.fxRef,fxDate:existing.fxDate}:currentFxSnapshot()),
+      period:periodKey(p),quarter:budgetQuarter(p)};
+    const dup=data.movements.find(m=>m.id!==obj.id&&m2SameMovement(m,obj));
+    if(dup&&!confirm(`Ya existe un ${type.toLowerCase()} de ${originalMoney(amount,currency)} el ${date} con la misma cuenta y categoría. ¿Registrar igualmente?`))return;
+    if(existing){
+      if(!confirm("¿Guardar los cambios de este movimiento? Se actualizarán los indicadores y se conservará el registro del cambio."))return;
+      m2Audit("edit",obj,existing);
+      const index=data.movements.findIndex(m=>m.id===existing.id);
+      data.movements[index]=obj;
+    }else{
+      data.movementSeq++;
+      obj.seq=data.movementSeq;
+      const templateId=document.getElementById("mScheduledId").value;
+      if(templateId){
+        const template=data.movementTemplates.find(t=>t.id===templateId);
+        if(!template?.active)return alert("Esta programación ya no está activa.");
+        if(data.movements.some(m=>m.scheduleTemplateId===templateId&&m.scheduledFor===template.nextDate))
+          return alert("Esta fecha programada ya fue registrada. Revisá el historial antes de continuar.");
+        obj.scheduleTemplateId=templateId;obj.scheduledFor=template.nextDate;
+        template.lastPostedFor=template.nextDate;
+        template.nextDate=m2NextScheduledDate(template.nextDate,template.frequency,template.anchorDay);
+      }
+      data.movements.push(obj);m2Audit("create",obj);
+    }
+    save();m2ResetComposer();
+    refreshV7MovementCategoryFilter();m2RefreshAccounts();
+    renderMovements();renderDashboard();renderPlan();renderReports();m2RenderTemplates();
   });
 
   document.addEventListener("click",e=>{
@@ -4112,7 +4156,16 @@ function bind(){
     const editCategory=e.target.closest("[data-edit-category]");if(editCategory){openCategory(categoryById(editCategory.dataset.editCategory));return}
     const archiveCategory=e.target.closest("[data-archive-category]");if(archiveCategory){const c=categoryById(archiveCategory.dataset.archiveCategory);if(c&&confirm(`¿Archivar “${c.name}”?\n\nSu historial y presupuestos anteriores se conservarán, pero dejará de aparecer para nuevos registros.`)){c.active=false;syncIncomeProjectionsForData(data,{categoryId:c.id});save();refreshMovementCategorySelect();renderCategories();renderPlan();renderDashboard()}return}
     const reactivateCategory=e.target.closest("[data-reactivate-category]");if(reactivateCategory){const c=categoryById(reactivateCategory.dataset.reactivateCategory);if(c){c.active=true;syncIncomeProjectionsForData(data,{categoryId:c.id});save();renderCategories();renderPlan();renderDashboard()}return}
-    const del=e.target.closest("[data-delete-movement]");if(del&&confirm("¿Eliminar este movimiento?")){data.movements=data.movements.filter(m=>m.id!==del.dataset.deleteMovement);save();renderMovements()}
+    const del=e.target.closest("[data-delete-movement]");
+    if(del){
+      const movement=data.movements.find(m=>m.id===del.dataset.deleteMovement);
+      if(movement&&confirm("¿Eliminar este movimiento? Se actualizarán tus saldos, presupuesto e indicadores.")){
+        m2Audit("delete",movement,movement);
+        data.movements=data.movements.filter(m=>m.id!==movement.id);
+        save();renderMovements();renderDashboard();renderPlan();renderReports();m2RenderAccountSummary(selectedMovements(document.getElementById("movementLevel").value,document.getElementById("movementPeriod").value));
+      }
+      return;
+    }
     const edit=e.target.closest("[data-edit-debt]");if(edit)openDebt(data.debts.find(d=>d.id===edit.dataset.editDebt));
     const archive=e.target.closest("[data-archive-debt]");
     if(archive){
