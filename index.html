@@ -1073,6 +1073,12 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
 .one-payment-notice{font-size:.76rem;color:var(--muted);line-height:1.5}
 @media(max-width:750px){.one-collection-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 /* Movimientos 2.0 */
+.m2-audit-card{margin-top:14px}
+.m2-audit-card>summary{cursor:pointer;font-size:.84rem;font-weight:700}
+.m2-audit-card #movementAuditList{display:grid;gap:5px;margin-top:10px}
+.m2-audit-row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--border);font-size:.76rem;color:var(--muted)}
+.m2-audit-row strong{color:var(--text)}
+
 .m2-quick-types{display:flex;gap:7px;flex-wrap:wrap;margin:0 0 13px}
 .m2-quick-types button{font-size:.78rem;font-weight:650;padding:8px 12px;border:1px solid var(--border);background:var(--surface-2);color:var(--muted);border-radius:8px}
 .m2-quick-types button.active{background:var(--text);color:var(--app-bg);border-color:var(--text)}
@@ -1402,6 +1408,11 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
         </div>
       </aside>
     </div>
+    <details class="v7-card m2-audit-card" id="movementAuditPanel">
+      <summary>Historial de cambios en movimientos</summary>
+      <p class="m2-helper">Registra los cambios realizados desde esta versión. No modifica tus movimientos históricos ni es una conciliación bancaria.</p>
+      <div id="movementAuditList"></div>
+    </details>
   </section>
 
   <section class="view" id="view-debts">
@@ -3730,6 +3741,17 @@ function m2Audit(action,m,before=null){
   data.movementAudit=Array.isArray(data.movementAudit)?data.movementAudit:[];
   data.movementAudit.push({id:id(),action,movementId:m.id,at:new Date().toISOString(),previous:before?clone(before):null});
 }
+function m2RenderAudit(){
+  const list=document.getElementById("movementAuditList");if(!list)return;
+  const entries=[...(data.movementAudit||[])].slice(-30).reverse();
+  const labels={create:"Creado",edit:"Modificado",delete:"Eliminado"};
+  list.innerHTML=entries.length?entries.map(e=>{
+    const current=(data.movements||[]).find(m=>m.id===e.movementId);
+    const m=current||e.previous,when=e.at?new Date(e.at).toLocaleString("es-CR"):"";
+    return `<div class="m2-audit-row"><span><strong>${labels[e.action]||"Cambio"}</strong> · ${safe(m?.description||movementCategoryName(m||{})||"Movimiento")}${m?` · ${dateLabel(m.date)}`:""}</span><span>${safe(when)}</span></div>`;
+  }).join(""):'<div class="empty">No hay cambios registrados desde la actualización.</div>';
+}
+
 function m2RenderAccountSummary(scope){
   const box=document.getElementById("movementAccountsSummary");if(!box)return;
   const byAccount=new Map();
@@ -4748,7 +4770,7 @@ renderMovements=function(){
   document.getElementById("movementQuick").innerHTML=`<div class="v7-card-head"><div><h2>Vista rápida</h2><p>${selectedLabel(level,value)}</p></div></div>
     <div class="v7-donut-placeholder" style="--v7-pct:${topPct}%"><div class="v7-donut-center"><strong>${money(expense)}</strong><span>Gastos</span></div></div>
     <div class="v7-mini-bars">${ranked.length?ranked.map(([name,val])=>`<div class="v7-mini-bar"><div><div style="display:flex;justify-content:space-between;gap:8px;margin-bottom:4px"><span>${v7SafeText(name)}</span><span>${tot?Math.round(val/tot*100):0}%</span></div><div class="v7-mini-bar-track"><span style="width:${tot?Math.min(100,val/tot*100):0}%"></span></div></div><strong style="font-size:.66rem;text-align:right">${money(val)}</strong></div>`).join(""):`<div class="muted" style="font-size:.72rem">Todavía no hay gastos reales en este periodo.</div>`}</div>`;
-  m2RenderAccountSummary(scope);m2RenderTemplates();
+  m2RenderAccountSummary(scope);m2RenderTemplates();m2RenderAudit();
 };
 
 renderDebts=function(){
