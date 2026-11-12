@@ -2395,7 +2395,19 @@ function setIncomeBudgetToScheduled(p,cid){
   p.categoryBudgets[cid]=scheduled?.amount||0;p.categoryBudgetCurrencies[cid]=cfg?.expectedCurrency||"CRC";p.categoryBudgetSources[cid]="auto";if(scheduled?.dates?.length)p.categoryBudgetScheduledDates[cid]=scheduled.dates;else delete p.categoryBudgetScheduledDates[cid];save();
 }
 function movementCategoryName(m){return categoryNameById(m.categoryId,m.category)}
-function movementMatchesCategory(m,c){return m.categoryId?m.categoryId===c.id:movementCategoryName(m)===c.name}
+function movementMatchesCategory(m,c){
+  if(Array.isArray(m.splits)&&m.splits.length)return m.splits.some(x=>x.categoryId===c.id);
+  return m.categoryId?m.categoryId===c.id:movementCategoryName(m)===c.name;
+}
+function movementCategoryAmountCRC(m,c){
+  if(!Array.isArray(m.splits)||!m.splits.length)return movementMatchesCategory(m,c)?movementAmountCRC(m):0;
+  if(!(num(m.amount)>0))return 0;
+  const part=m.splits.filter(x=>x.categoryId===c.id).reduce((sum,x)=>sum+num(x.amount),0);
+  return movementAmountCRC(m)*part/num(m.amount);
+}
+function movementDisplayCategory(m){
+  return (m.splits||[]).length>1?`${m.splits.length} categorías`:movementCategoryName(m);
+}
 function periodCategoryBudgetCRC(p,cid,intent="pay"){return currentToCRC(p?.categoryBudgets?.[cid],p?.categoryBudgetCurrencies?.[cid]||"CRC",intent)}
 function periodIncomeTotalCRC(p){return budgetCategories("Ingreso",p).reduce((s,c)=>s+periodCategoryBudgetCRC(p,c.id,"receive"),0)}
 function periodExpenseTotalCRC(p){return budgetCategories(["Gasto","Pago deuda"],p).reduce((s,c)=>s+periodCategoryBudgetCRC(p,c.id,"pay"),0)}
@@ -2496,7 +2508,7 @@ function periodHasRealSignal(p){
 function remainingBudgetForCurrentPeriod(p,throughDate){
   const ms=periodMovements(p,throughDate).filter(m=>m.type==="Gasto"||m.type==="Pago deuda");
   return budgetCategories(["Gasto","Pago deuda"],p).reduce((sum,c)=>{
-    const spent=ms.filter(m=>movementMatchesCategory(m,c)).reduce((s,m)=>s+movementAmountCRC(m),0);
+    const spent=ms.reduce((s,m)=>s+movementCategoryAmountCRC(m,c),0);
     return sum+Math.max(0,periodCategoryBudgetCRC(p,c.id,"pay")-spent);
   },0);
 }
@@ -2606,7 +2618,7 @@ function categoryReportFiltered(level,value){
     const planned=rows.map(p=>periodCategoryBudgetCRC(p,c.id,"pay"));
     const spent=movements
       .filter(m=>(m.type==="Gasto"||m.type==="Pago deuda")&&movementMatchesCategory(m,c))
-      .map(m=>movementAmountCRC(m));
+      .map(m=>movementCategoryAmountCRC(m,c));
     if(!planned.some(v=>Math.abs(v)>0.0001)&&!spent.some(v=>Math.abs(v)>0.0001))return [];
     const budget=planned.reduce((sum,v)=>sum+v,0);
     const actual=spent.reduce((sum,v)=>sum+v,0);
@@ -4426,7 +4438,7 @@ renderMovements=function(){
       return `<div class="v7-transaction-row">
         <div class="v7-transaction-icon">${v7MovementIcon(m)}</div>
         <div class="v7-transaction-main"><strong>${v7SafeText(label)}</strong><span>${v7SafeText(m.account||m.type)}${movementDebtName(m)?` · ${v7SafeText(movementDebtName(m))}`:""}</span></div>
-        <div class="v7-category-chip">${v7SafeText(movementCategoryName(m)||m.type)}</div>
+        <div class="v7-category-chip">${v7SafeText(movementDisplayCategory(m)||m.type)}</div>
         <div class="v7-transaction-amount ${positive?"income":""}">${positive?"+":"−"} ${money(amt)}</div>
         <button class="v7-row-menu" type="button" data-delete-movement="${m.id}" title="Eliminar">···</button>
       </div>`
@@ -4434,7 +4446,12 @@ renderMovements=function(){
   </div>`).join(""):`<div class="empty">No hay movimientos que coincidan con esta vista.</div>`;
 
   const expenseRows=scope.filter(m=>m.type==="Gasto"),tot=expenseRows.reduce((s,m)=>s+movementAmountCRC(m),0),byCat={};
-  expenseRows.forEach(m=>{const k=movementCategoryName(m)||"Otros";byCat[k]=(byCat[k]||0)+movementAmountCRC(m)});
+  expenseRows.forEach(m=>{
+    if((m.splits||[]).length){
+      const original=num(m.amount);
+      (m.splits||[]).forEach(split=>{const name=categoryNameById(split.categoryId,"Otros");byCat[name]=(byCat[name]||0)+(original?movementAmountCRC(m)*num(split.amount)/original:0)});
+    }else{const k=movementCategoryName(m)||"Otros";byCat[k]=(byCat[k]||0)+movementAmountCRC(m)}
+  });
   const ranked=Object.entries(byCat).sort((a,b)=>b[1]-a[1]).slice(0,5),topPct=tot&&ranked.length?Math.round(ranked[0][1]/tot*100):0;
   document.getElementById("movementQuick").innerHTML=`<div class="v7-card-head"><div><h2>Vista rápida</h2><p>${selectedLabel(level,value)}</p></div></div>
     <div class="v7-donut-placeholder" style="--v7-pct:${topPct}%"><div class="v7-donut-center"><strong>${money(expense)}</strong><span>Gastos</span></div></div>
