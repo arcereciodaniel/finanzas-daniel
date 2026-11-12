@@ -3831,6 +3831,92 @@ function m2OpenComposer(m=null,{repeat=false,scheduledId=""}={}){
   document.getElementById("mAmount").focus();
 }
 
+
+/* Programados: se crean plantillas, jamás movimientos reales sin confirmación. */
+function m2NextScheduledDate(date,frequency,anchorDay=0){
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||""))return "";
+  if(frequency==="weekly")return addDaysIso(date,7);
+  if(frequency==="fortnightly")return addDaysIso(date,14);
+  const [year,month,day]=date.split("-").map(Number),targetDay=anchorDay||day;
+  const delta=frequency==="yearly"?12:1;
+  const target=new Date(Date.UTC(year,month-1+delta,1));
+  const y=target.getUTCFullYear(),m=target.getUTCMonth()+1;
+  const last=lastDayOfMonth(y,m);
+  return `${y}-${String(m).padStart(2,"0")}-${String(Math.min(targetDay,last)).padStart(2,"0")}`;
+}
+function m2TemplateCategoryOptions(selected=""){
+  const type=document.getElementById("mtType")?.value||"Gasto",el=document.getElementById("mtCategory");
+  if(!el)return;
+  const rows=[...categoriesOfType(type)];
+  if(selected&&!rows.some(c=>c.id===selected)){const previous=categoryById(selected);if(previous)rows.push(previous)}
+  el.innerHTML=rows.map(c=>`<option value="${safe(c.id)}">${safe(c.name)}</option>`).join("");
+  if(selected&&rows.some(c=>c.id===selected))el.value=selected;
+  const debt=document.getElementById("mtDebt");
+  if(debt)debt.innerHTML='<option value="">Seleccionar deuda</option>'+activeDebts().map(d=>`<option value="${safe(d.id)}">${safe(d.name)}</option>`).join("");
+  const debtField=document.getElementById("mtDebtField");
+  if(debtField)debtField.hidden=type!=="Pago deuda";
+}
+function m2OpenTemplate(source=null){
+  const fromTemplate=source&&Object.prototype.hasOwnProperty.call(source,"frequency");
+  if(source?.splits?.length>1&&!fromTemplate)return alert("Para repetir un gasto dividido, usá «Repetir» desde su movimiento. Las plantillas frecuentes con divisiones se incorporarán posteriormente.");
+  document.getElementById("movementTemplateForm").reset();
+  document.getElementById("movementTemplateTitle").textContent=fromTemplate?"Editar programación":"Programar movimiento";
+  document.getElementById("mtId").value=fromTemplate?source.id:"";
+  document.getElementById("mtName").value=source?.name||source?.description||"";
+  document.getElementById("mtType").value=source?.type||"Gasto";
+  document.getElementById("mtFrequency").value=source?.frequency||"monthly";
+  document.getElementById("mtNextDate").value=fromTemplate?source.nextDate:todayIso();
+  m2TemplateCategoryOptions(source?.categoryId||"");
+  document.getElementById("mtDebt").value=source?.debtId||"";
+  document.getElementById("mtAmount").value=source?.amount||"";
+  document.getElementById("mtCurrency").value=normalizeCurrency(source?.currency||displayCurrency());
+  document.getElementById("mtDescription").value=source?.description||"";
+  m2RefreshAccounts();
+  document.getElementById("mtAccount").value=source?.account||"";
+  document.getElementById("movementTemplateDialog").showModal();
+}
+function m2RenderTemplates(){
+  const box=document.getElementById("movementTemplatesList");if(!box)return;
+  const items=[...(data.movementTemplates||[])].sort((a,b)=>Number(b.active)-Number(a.active)||String(a.nextDate).localeCompare(String(b.nextDate)));
+  const freq={weekly:"Semanal",fortnightly:"Cada 14 días",monthly:"Mensual",yearly:"Anual"};
+  box.innerHTML=items.length?items.map(t=>{
+    const isDue=t.active&&t.nextDate<=todayIso(),cls=t.active?(isDue?" · Por confirmar":" · Próximo"):" · Pausado";
+    return `<div class="m2-template-card">
+       <div><strong>${safe(t.name||t.description||"Movimiento programado")}</strong><small>${safe(freq[t.frequency]||"Mensual")}${cls} · ${dateLabel(t.nextDate)} · ${originalMoney(t.amount,t.currency)}</small></div>
+       <div class="actions">
+       ${t.active?`<button class="btn small" type="button" data-m2-post-template="${safe(t.id)}">Registrar ahora</button>`:""}
+       <button class="btn secondary small" type="button" data-m2-edit-template="${safe(t.id)}">Editar</button>
+       <button class="btn secondary small" type="button" data-m2-toggle-template="${safe(t.id)}">${t.active?"Pausar":"Reactivar"}</button>
+       </div></div>`;
+  }).join(""):'<div class="empty">Todavía no tenés movimientos programados. Podés crear un recordatorio recurrente para registrarlo cuando corresponda.</div>';
+}
+function m2PrepareScheduled(t){
+  if(!t?.active)return;
+  if(!periodForDate(t.nextDate))return alert("La próxima fecha está fuera de los trimestres configurados. Agregá ese trimestre en Presupuesto o editá la programación.");
+  if(!categoryById(t.categoryId)||!categoryIsActive(categoryById(t.categoryId)))return alert("La categoría de este programado está archivada. Editá la programación antes de registrar.");
+  if(t.type==="Pago deuda"&&!activeDebts().some(d=>d.id===t.debtId))return alert("Seleccioná una deuda activa en la programación.");
+  m2OpenComposer({...t,date:t.nextDate},{scheduledId:t.id});
+}
+function m2SaveTemplate(){
+  const tid=document.getElementById("mtId").value,old=(data.movementTemplates||[]).find(t=>t.id===tid)||null;
+  const type=document.getElementById("mtType").value,categoryId=document.getElementById("mtCategory").value;
+  const c=categoryById(categoryId),debtId=document.getElementById("mtDebt").value;
+  const date=document.getElementById("mtNextDate").value,amount=Number(document.getElementById("mtAmount").value);
+  const name=document.getElementById("mtName").value.trim();
+  if(!name||!c||c.type!==type||!categoryIsActive(c))return alert("Completá un nombre y una categoría activa del tipo seleccionado.");
+  if(type==="Pago deuda"&&!activeDebts().some(d=>d.id===debtId))return alert("Seleccioná una deuda activa.");
+  if(!date||!Number.isFinite(amount)||amount<=0)return alert("Ingresá una fecha y un monto válidos.");
+  const obj={...old,id:old?.id||id(),name,type,categoryId,debtId:type==="Pago deuda"?debtId:"",
+    frequency:document.getElementById("mtFrequency").value,nextDate:date,anchorDay:Number(date.slice(8,10)),
+    amount,currency:normalizeCurrency(document.getElementById("mtCurrency").value),
+    description:document.getElementById("mtDescription").value.trim(),account:document.getElementById("mtAccount").value,
+    active:old?old.active!==false:true,createdAt:old?.createdAt||new Date().toISOString()};
+  data.movementTemplates=data.movementTemplates||[];
+  const index=data.movementTemplates.findIndex(t=>t.id===obj.id);
+  if(index<0)data.movementTemplates.push(obj);else data.movementTemplates[index]=obj;
+  save();document.getElementById("movementTemplateDialog").close();m2RenderTemplates();
+}
+
 function m2RefreshQuickTypes(){
   const type=document.getElementById("mType")?.value;
   document.querySelectorAll("[data-m2-type]").forEach(b=>b.classList.toggle("active",b.dataset.m2Type===type));
