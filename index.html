@@ -4813,6 +4813,95 @@ function refreshV7MovementCategoryFilter(){
   el.innerHTML=`<option value="">Todas</option>${cats.map(c=>`<option value="${c.id}">${safe(c.name)}</option>`).join("")}`;
   if([...el.options].some(o=>o.value===current))el.value=current;
 }
+
+function initMovements2(){
+  const form=document.getElementById("movementForm"),composer=document.getElementById("movementComposer");
+  m2ResetComposer(true);
+  m2RefreshAccounts("");
+  m2RenderTemplates();
+  document.getElementById("toggleMovementComposer")?.addEventListener("click",()=>{
+    // El listener de la interfaz principal ya alternó el panel.
+    if(!composer.hidden)m2OpenComposer();
+  });
+  document.getElementById("closeMovementComposer")?.addEventListener("click",()=>m2ResetComposer());
+  document.getElementById("movementCancelEdit")?.addEventListener("click",()=>m2ResetComposer());
+  document.querySelectorAll("[data-m2-type]").forEach(btn=>btn.addEventListener("click",()=>{
+    document.getElementById("mType").value=btn.dataset.m2Type;
+    document.getElementById("mType").dispatchEvent(new Event("change",{bubbles:true}));
+  }));
+  document.getElementById("mType")?.addEventListener("change",m2RefreshQuickTypes);
+  const splits=document.getElementById("movementSplitRows"),splitDetails=document.getElementById("movementSplitDetails");
+  splitDetails?.addEventListener("toggle",()=>{
+    if(splitDetails.open&&!splits.children.length){
+      const total=num(document.getElementById("mAmount").value),cats=categoriesOfType("Gasto");
+      const a=Math.round(total*50)/100,b=Math.max(0,Math.round((total-a)*100)/100);
+      m2AddSplitRow(cats[0]?.id,a||"");m2AddSplitRow(cats[1]?.id||cats[0]?.id,b||"");
+    }
+    m2SplitMessage();
+  });
+  document.getElementById("addMovementSplit")?.addEventListener("click",()=>{
+    const used=new Set([...splits.querySelectorAll(".m2-split-category")].map(el=>el.value));
+    const next=categoriesOfType("Gasto").find(c=>!used.has(c.id));
+    if(!next)return alert("No hay otras categorías de Gasto disponibles.");
+    m2AddSplitRow(next.id);
+  });
+  splits?.addEventListener("click",e=>{
+    if(e.target.closest("[data-m2-remove-split]")){e.target.closest(".m2-split-row")?.remove();m2SplitMessage()}
+  });
+  splits?.addEventListener("input",m2SplitMessage);
+  splits?.addEventListener("change",m2SplitMessage);
+  document.getElementById("mAmount")?.addEventListener("input",m2SplitMessage);
+  ["movementDateFrom","movementDateTo","movementAccountFilter","movementCurrencyFilter","movementAmountMin","movementAmountMax"].forEach(id=>{
+    const el=document.getElementById(id);
+    el?.addEventListener(id.includes("Amount")?"input":"change",renderMovements);
+  });
+  document.getElementById("movementClearFilters")?.addEventListener("click",()=>{
+    for(const key of ["movementDateFrom","movementDateTo","movementAccountFilter","movementCurrencyFilter","movementAmountMin","movementAmountMax","movementSearch","movementTypeFilter","movementCategoryFilter"]){
+      const el=document.getElementById(key);if(el)el.value="";
+    }
+    renderMovements();
+  });
+  document.getElementById("addMovementTemplateBtn")?.addEventListener("click",()=>m2OpenTemplate());
+  document.getElementById("mtType")?.addEventListener("change",()=>m2TemplateCategoryOptions());
+  document.getElementById("cancelMovementTemplate")?.addEventListener("click",()=>document.getElementById("movementTemplateDialog").close());
+  document.getElementById("movementTemplateForm")?.addEventListener("submit",e=>{e.preventDefault();m2SaveTemplate()});
+  document.getElementById("manageMovementAccounts")?.addEventListener("click",()=>{
+    document.getElementById("newMovementAccount").value="";
+    document.getElementById("movementAccountsList").textContent="Cuentas disponibles: "+m2Accounts().join(" · ");
+    document.getElementById("movementAccountsDialog").showModal();
+  });
+  document.getElementById("closeMovementAccounts")?.addEventListener("click",()=>document.getElementById("movementAccountsDialog").close());
+  document.getElementById("movementAccountForm")?.addEventListener("submit",e=>{
+    e.preventDefault();const input=document.getElementById("newMovementAccount");
+    const name=input.value.trim();
+    if(!name)return;
+    if(m2Accounts().some(a=>a.toLocaleLowerCase("es")===name.toLocaleLowerCase("es")))return alert("Esta cuenta ya existe.");
+    data.accounts=data.accounts||[];data.accounts.push(name);
+    save();m2RefreshAccounts(name);
+    document.getElementById("movementAccountsList").textContent="Cuentas disponibles: "+m2Accounts().join(" · ");
+    input.value="";
+    renderMovements();
+  });
+  document.addEventListener("click",e=>{
+    const edit=e.target.closest("[data-m2-edit]");
+    if(edit){const m=data.movements.find(x=>x.id===edit.dataset.m2Edit);if(m)m2OpenComposer(m);return}
+    const repeat=e.target.closest("[data-m2-repeat]");
+    if(repeat){const m=data.movements.find(x=>x.id===repeat.dataset.m2Repeat);if(m)m2OpenComposer(m,{repeat:true});return}
+    const schedule=e.target.closest("[data-m2-schedule]");
+    if(schedule){const m=data.movements.find(x=>x.id===schedule.dataset.m2Schedule);if(m)m2OpenTemplate(m);return}
+    const post=e.target.closest("[data-m2-post-template]");
+    if(post){const t=data.movementTemplates.find(x=>x.id===post.dataset.m2PostTemplate);if(t)m2PrepareScheduled(t);return}
+    const editTemplate=e.target.closest("[data-m2-edit-template]");
+    if(editTemplate){const t=data.movementTemplates.find(x=>x.id===editTemplate.dataset.m2EditTemplate);if(t)m2OpenTemplate(t);return}
+    const toggle=e.target.closest("[data-m2-toggle-template]");
+    if(toggle){
+      const t=data.movementTemplates.find(x=>x.id===toggle.dataset.m2ToggleTemplate);
+      if(t){t.active=!t.active;save();m2RenderTemplates()}
+      return;
+    }
+  });
+}
+
 function initV7(){
   refreshV7MovementCategoryFilter();
   const advancedDetails=document.getElementById("dashboardAdvancedDetails");
@@ -4828,10 +4917,10 @@ function initV7(){
     document.getElementById("movementTypeFilter").value=btn.dataset.v7MovementType||"";
     renderMovements();
   }));
-  document.getElementById("movementForm")?.addEventListener("submit",()=>setTimeout(()=>{if(composer)composer.hidden=true;refreshV7MovementCategoryFilter()},0));
+
 }
 
-bind();bindReportStudio();initV7();initR8();initUiPreferences();initLiquidityChartInteraction();initModulesBeta();initDataIntegrityNotice();renderDashboard();updateCurrencyHeader();setTimeout(()=>{if(needsDailyFx())openFxDialog(true)},80);
+bind();bindReportStudio();initV7();initR8();initMovements2();initUiPreferences();initLiquidityChartInteraction();initModulesBeta();initDataIntegrityNotice();renderDashboard();updateCurrencyHeader();setTimeout(()=>{if(needsDailyFx())openFxDialog(true)},80);
 </script>
 </body>
 </html>
