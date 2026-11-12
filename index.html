@@ -1389,7 +1389,7 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
 
   <section class="view" id="view-shared">
     <h1>Cobros <span class="one-beta-tag">BETA</span></h1>
-    <p class="sub">Registrá lo que te deben, agrupalo por persona o motivo y elegí cuándo recordarte cobrarlo. Los cargos mensuales se generan automáticamente mientras estén activos.</p>
+    <p class="sub">Organizá por persona, registrá abonos y recordatorios, y conservá los cargos recurrentes de cada mes. Un abono no se suma automáticamente a Movimientos.</p>
     <div class="receivable-toolbar">
       <div class="month-navigator" aria-label="Navegar por mes">
         <button class="month-nav-btn" id="sharedPrevMonth" type="button" title="Mes anterior" aria-label="Mes anterior">‹</button>
@@ -1474,7 +1474,7 @@ header nav button.one-add-module-button:focus-visible{outline:2px solid var(--ac
   <div style="padding:20px 22px;border-bottom:1px solid var(--border)"><h2 id="modulesDialogTitle">Herramientas adicionales</h2><p>Activá las herramientas que querés utilizar. Podés ocultarlas cuando no las necesités sin perder sus datos.</p></div>
   <div class="one-module-fixed"><strong>Siempre visibles:</strong> Inicio · Presupuesto · Movimientos</div>
   <label class="one-module-item"><input type="checkbox" id="moduleDebtsToggle"><span><strong>Deudas</strong><small>Préstamos, tarjetas y pagos pendientes.</small></span></label>
-  <label class="one-module-item"><input type="checkbox" id="moduleCollectionsToggle"><span><strong>Cobros · Beta</strong><small>Personas, cargos compartidos, recurrencias y recordatorios en Inicio.</small></span></label>
+  <label class="one-module-item"><input type="checkbox" id="moduleCollectionsToggle"><span><strong>Cobros · Beta 2.0</strong><small>Personas, abonos parciales, grupos, recurrencias y recordatorios en Inicio.</small></span></label>
   <div class="one-module-footer"><button type="button" class="btn" id="closeModulesBtn">Listo</button></div>
 </dialog>
 <dialog id="categoryManagerDialog" class="rastro-category-manager">
@@ -4179,7 +4179,7 @@ function renderCobrosReminderWidget(){
     const status=days<0?"Vencido":days===0?"Cobrar hoy":days===1?"Mañana":`Recordar ${dateLabel(date)}`;
     const group=sharedGroupById(c.groupId),person=c.person||group?.person||"Sin persona";
     return `<div class="one-collections-row"><div><strong>${safe(person)} · ${safe(c.description||c.kind)}</strong><small class="${days<=0?"one-collections-overdue":""}">${safe(status)}${group?` · ${safe(group.name)}`:""}</small></div><span class="one-collections-amount">${money(cobroRemainingCRC(c))}</span><button type="button" class="btn secondary small" data-snooze-cobro="${safe(c.id)}" aria-label="Posponer recordatorio de ${safe(c.description)} tres días">Posponer 3 días</button></div>`;
-  }).join(""):`<div class="empty">Todavía no hay cobros pendientes. Podés agregar el primero desde Cobros.</div>`;
+  }).join(""):`<div class="empty">${pending.length?"Los recordatorios pendientes están pospuestos. Consultalos desde Cobros.":"Todavía no hay cobros pendientes. Podés agregar el primero desde Cobros."}</div>`;
 }
 
 const renderDashboardLegacy=renderDashboard;
